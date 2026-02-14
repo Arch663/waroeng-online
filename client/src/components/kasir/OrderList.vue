@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useCartStore } from "@/stores/useCartStore";
 import type { CartItem } from "@/stores/useCartStore";
 
@@ -38,7 +38,15 @@ function clampQty(item: CartItem) {
     >
       <div>
         <p class="font-semibold text-foreground">{{ item.name }}</p>
-        <p class="text-foreground">Rp {{ item.price.toLocaleString() }}</p>
+        <p class="text-foreground">
+          Rp
+          {{
+            Number(item.price).toLocaleString("id-ID", {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            })
+          }}
+        </p>
         <div class="flex items-center gap-1 mt-2">
           <div class="flex items-center gap-1">
             <button
@@ -67,7 +75,15 @@ function clampQty(item: CartItem) {
           </div>
         </div>
       </div>
-      <b> Rp {{ (item.qty * item.price).toLocaleString() }} </b>
+      <b>
+        Rp
+        {{
+          Number(item.qty * item.price).toLocaleString("id-ID", {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          })
+        }}
+      </b>
     </div>
   </div>
 </template>

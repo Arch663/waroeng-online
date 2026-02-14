@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 defineProps<{
   products: Array<{
     id: number;
@@ -39,7 +39,13 @@ defineProps<{
             <td class="py-2 font-medium">{{ product.name }}</td>
             <td class="py-2">{{ product.sold }}</td>
             <td class="py-2 text-right tabular-nums">
-              Rp {{ product.revenue.toLocaleString() }}
+              Rp
+              {{
+                Number(product.revenue).toLocaleString("id-ID", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })
+              }}
             </td>
           </tr>
         </tbody>

@@ -21,9 +21,6 @@ export const useCartStore = defineStore("cart", {
 
       const exist = this.items.find((i) => i.id === product.id);
       if (exist) {
-        if (exist.qty < product.stock) {
-          exist.qty += 1;
-        }
         return;
       }
 

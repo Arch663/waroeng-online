@@ -6,6 +6,7 @@ export interface InventoryItem {
   name: string;
   price: number;
   stock: number;
+  category_id?: number;
   category: string;
   image?: string;
 }
@@ -14,7 +15,8 @@ export interface InventoryPayload {
   name: string;
   price: number;
   stock: number;
-  category: string;
+  category?: string; // legacy support
+  category_id?: number; // new category relation
   sku?: string;
   image?: string;
 }
@@ -34,6 +36,7 @@ function normalizeItem(raw: any): InventoryItem {
     name: String(raw.name ?? ""),
     price: Number(raw.price ?? 0),
     stock: Number(raw.stock ?? 0),
+    category_id: raw.category_id ? Number(raw.category_id) : undefined,
     category: String(raw.category ?? "Lainnya"),
     image: raw.image,
   };
@@ -41,12 +44,20 @@ function normalizeItem(raw: any): InventoryItem {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   assertApiUrl();
+  const token = localStorage.getItem("token");
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...((options?.headers as any) ?? {}),
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${baseUrl}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options?.headers ?? {}),
-    },
     ...options,
+    headers,
   });
 
   if (!res.ok) {
@@ -61,9 +72,46 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
-export async function getInventoryItems(): Promise<InventoryItem[]> {
-  const data = await request<any[]>("/inventory");
-  return data.map(normalizeItem);
+export interface InventoryResponse {
+  items: InventoryItem[];
+  meta: {
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+    limit: number;
+  };
+}
+
+export async function getInventoryItems(params?: {
+  q?: string;
+  page?: number;
+  limit?: number;
+  category_id?: number;
+  sortBy?: string;
+  order?: "ASC" | "DESC";
+}): Promise<InventoryResponse> {
+  const query = new URLSearchParams();
+  if (params?.q) query.append("q", params.q);
+  if (params?.page) query.append("page", params.page.toString());
+  if (params?.limit) query.append("limit", params.limit.toString());
+  if (params?.category_id)
+    query.append("category_id", params.category_id.toString());
+  if (params?.sortBy) query.append("sortBy", params.sortBy);
+  if (params?.order) query.append("order", params.order);
+
+  const queryString = query.toString();
+  const path = `/inventory${queryString ? "?" + queryString : ""}`;
+  const data = await request<any>(path);
+
+  return {
+    items: (data.items || []).map(normalizeItem),
+    meta: data.meta || {
+      totalItems: 0,
+      totalPages: 0,
+      currentPage: 1,
+      limit: 10,
+    },
+  };
 }
 
 export async function createInventoryItem(

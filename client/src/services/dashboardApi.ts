@@ -5,6 +5,10 @@ export interface DashboardStats {
   transaksiToday: number;
   productsSoldToday: number;
   lowStockCount: number;
+  omzetMonth: number;
+  transaksiMonth: number;
+  purchasesToday?: number;
+  purchasesMonth?: number;
 }
 
 export interface LowStockItem {
@@ -27,8 +31,20 @@ export interface TopProduct {
   revenue: number;
 }
 
-export interface WeeklySalesPoint {
-  day: string;
+export interface SalesPoint {
+  day?: string;
+  month?: string;
+  revenue: number;
+}
+
+export interface PurchasePoint {
+  day?: string;
+  month?: string;
+  amount: number;
+}
+
+export interface CategoryPoint {
+  category: string;
   revenue: number;
 }
 
@@ -37,7 +53,35 @@ export interface DashboardSummary {
   lowStockItems: LowStockItem[];
   recentTransactions: RecentTransaction[];
   topProducts: TopProduct[];
-  weeklySales: WeeklySalesPoint[];
+  weeklySales: SalesPoint[];
+  monthlySales: SalesPoint[];
+  dailyMonthSales: SalesPoint[];
+  categorySales: CategoryPoint[];
+  purchaseStats?: {
+    purchasesToday: number;
+    purchasesMonth: number;
+  };
+  weeklyPurchases?: PurchasePoint[];
+  monthlyPurchases?: PurchasePoint[];
+}
+
+export interface ReportSummary {
+  sales: {
+    total_sales: number;
+    gross_revenue: number;
+    total_expenses: number;
+    profit: number;
+  };
+  categories: Array<{
+    name: string;
+    units_sold: number;
+    revenue: number;
+  }>;
+  topProducts: Array<{
+    name: string;
+    total_qty: number;
+    total_revenue: number;
+  }>;
 }
 
 const baseUrl = DATABASE_API_URL?.replace(/\/$/, "");
@@ -50,7 +94,10 @@ function assertApiUrl() {
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   assertApiUrl();
-  const res = await fetch(`${baseUrl}/dashboard/summary`);
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${baseUrl}/dashboard/summary`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
 
   if (!res.ok) {
     const text = await res.text();
@@ -58,4 +105,21 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   }
 
   return (await res.json()) as DashboardSummary;
+}
+
+export async function getReportsSummary(
+  period = "month",
+): Promise<ReportSummary> {
+  assertApiUrl();
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${baseUrl}/reports/summary?period=${period}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Request failed with status ${res.status}`);
+  }
+
+  return (await res.json()) as ReportSummary;
 }

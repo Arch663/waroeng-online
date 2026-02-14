@@ -10,25 +10,42 @@ defineEmits(["add"]);
 
 <template>
   <div
-    class="flex flex-col justify-around bg-surface rounded-2xl max-h-44 max-w-56 p-4 shadow-sm shadow-border cursor-pointer hover:shadow-md hover:-translate-y-1.5 transition text-center items-center min-w-24"
-    :class="product.stock <= 0 ? 'opacity-60 cursor-not-allowed hover:shadow-sm hover:translate-y-0' : ''"
+    class="group flex flex-col bg-surface rounded-2xl h-44 w-full p-4 shadow-sm shadow-border transition text-center cursor-pointer hover:shadow-md hover:-translate-y-1"
+    :class="
+      product.stock <= 0
+        ? 'opacity-60 cursor-not-allowed hover:translate-y-0 hover:shadow-sm'
+        : ''
+    "
     @click="product.stock > 0 && $emit('add', product)"
   >
-    <img
-      :src="product.image || '/vite.svg'"
-      class="w-16 h-16 mx-auto object-contain"
-      :alt="product.name"
-    />
+    <!-- IMAGE -->
+    <div class="flex justify-center">
+      <img
+        :src="product.image || '/vite.svg'"
+        :alt="product.name"
+        class="w-16 h-16 object-contain"
+      />
+    </div>
+
+    <!-- NAME -->
     <h3
-      class="mt-3 text-foreground text-sm font-medium text-center leading-tight line-clamp-2 min-h-8 sm:min-h-8"
+      class="mt-3 text-foreground text-sm font-medium leading-tight line-clamp-2 min-h-10"
     >
       {{ product.name }}
     </h3>
-    <p class="text-accent font-bold text-center whitespace-nowrap">
-      Rp {{ product.price.toLocaleString() }}
+
+    <!-- PRICE -->
+    <p class="text-accent font-bold whitespace-nowrap">
+      Rp
+      {{
+        Number(product.price).toLocaleString("id-ID", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        })
+      }}
     </p>
-    <p class="text-xs text-muted mt-1">
-      Stok: {{ product.stock }}
-    </p>
+
+    <!-- STOCK -->
+    <p class="text-xs text-muted mt-auto">Stok: {{ product.stock }}</p>
   </div>
 </template>

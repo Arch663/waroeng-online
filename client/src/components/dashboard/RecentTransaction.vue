@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 defineProps<{
   transactions: Array<{
     id: number;
@@ -30,7 +30,15 @@ defineProps<{
             {{ new Date(trx.createdAt).toLocaleString("id-ID") }}
           </p>
         </div>
-        <span class="font-medium"> Rp {{ trx.total.toLocaleString() }} </span>
+        <span class="font-medium">
+          Rp
+          {{
+            trx.total.toLocaleString("id-ID", {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            })
+          }}
+        </span>
       </div>
     </div>
   </div>

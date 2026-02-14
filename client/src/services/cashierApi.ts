@@ -7,6 +7,8 @@ interface CheckoutItemPayload {
 
 export interface CheckoutPayload {
   items: CheckoutItemPayload[];
+  paid?: number;
+  change?: number;
 }
 
 export interface CheckoutResult {
@@ -34,12 +36,16 @@ function assertApiUrl() {
   }
 }
 
-export async function checkout(payload: CheckoutPayload): Promise<CheckoutResult> {
+export async function checkout(
+  payload: CheckoutPayload,
+): Promise<CheckoutResult> {
   assertApiUrl();
+  const token = localStorage.getItem("token");
   const res = await fetch(`${baseUrl}/cashier/checkout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(payload),
   });
