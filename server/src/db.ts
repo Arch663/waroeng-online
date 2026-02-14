@@ -5,13 +5,55 @@ import { seedDatabase } from "./dbSeeder";
 
 dotenv.config();
 
-const pool = new Pool({
-  host: process.env.PGHOST ?? "localhost",
-  port: Number(process.env.PGPORT ?? 5432),
-  user: process.env.PGUSER ?? "postgres",
-  password: process.env.PGPASSWORD ?? "3211",
-  database: process.env.PGDATABASE ?? "waroeng",
-});
+const isProduction = process.env.NODE_ENV === "production";
+const hasSupabaseUrlOnly =
+  Boolean(process.env.SUPABASE_URL) &&
+  Boolean(process.env.SUPABASE_KEY) &&
+  !process.env.SUPABASE_DB_URL &&
+  !process.env.DATABASE_URL &&
+  !process.env.POSTGRES_URL;
+
+if (hasSupabaseUrlOnly) {
+  console.warn(
+    "[db] SUPABASE_URL/SUPABASE_KEY terdeteksi, tapi pg.Pool tetap membutuhkan connection string Postgres.",
+  );
+  console.warn(
+    "[db] Set SUPABASE_DB_URL (atau DATABASE_URL/POSTGRES_URL) dari Supabase Database Connection String.",
+  );
+}
+
+const connectionString =
+  process.env.SUPABASE_DB_URL ||
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING;
+
+const pool = connectionString
+  ? new Pool({
+      connectionString,
+      // Vercel + Supabase biasanya butuh SSL.
+      ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
+      max: Number(process.env.PGPOOL_MAX ?? 20),
+      idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS ?? 30_000),
+      connectionTimeoutMillis: Number(process.env.PG_CONN_TIMEOUT_MS ?? 10_000),
+    })
+  : new Pool({
+      host: process.env.PGHOST ?? "localhost",
+      port: Number(process.env.PGPORT ?? 5432),
+      user: process.env.PGUSER ?? "postgres",
+      password: process.env.PGPASSWORD ?? "3211",
+      database: process.env.PGDATABASE ?? "waroeng",
+      ssl:
+        process.env.PGSSLMODE === "disable"
+          ? false
+          : isProduction
+            ? { rejectUnauthorized: false }
+            : false,
+      max: Number(process.env.PGPOOL_MAX ?? 20),
+      idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS ?? 30_000),
+      connectionTimeoutMillis: Number(process.env.PG_CONN_TIMEOUT_MS ?? 10_000),
+    });
 
 export async function initializeDatabase() {
   await pool.query(`
