@@ -18,23 +18,20 @@ defineEmits(["add"]);
     "
     @click="product.stock > 0 && $emit('add', product)"
   >
-    <!-- IMAGE -->
     <div class="flex justify-center">
       <img
-        :src="product.image || '/vite.svg'"
+        :src="product.image || '/default.svg'"
         :alt="product.name"
         class="w-16 h-16 object-contain"
       />
     </div>
 
-    <!-- NAME -->
     <h3
       class="mt-3 text-foreground text-sm font-medium leading-tight line-clamp-2 min-h-10"
     >
       {{ product.name }}
     </h3>
 
-    <!-- PRICE -->
     <p class="text-accent font-bold whitespace-nowrap">
       Rp
       {{
@@ -45,7 +42,6 @@ defineEmits(["add"]);
       }}
     </p>
 
-    <!-- STOCK -->
     <p class="text-xs text-muted mt-auto">Stok: {{ product.stock }}</p>
   </div>
 </template>

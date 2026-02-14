@@ -1,8 +1,13 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import StatGrid from "@/components/dashboard/StatGrid.vue";
-import SalesChart from "@/components/dashboard/SalesChart.vue";
+import TransactionVolumeChart from "@/components/dashboard/TransactionVolumeChart.vue";
+import ProfitChart from "@/components/dashboard/ProfitChart.vue";
+import ComparisonChart from "@/components/dashboard/ComparisonChart.vue";
+import MonthlyRevenueChart from "@/components/dashboard/MonthlyRevenueChart.vue";
+import TopProductsChart from "@/components/dashboard/TopProductsChart.vue";
 import CategoryDistributionChart from "@/components/dashboard/CategoryDistributionChart.vue";
+import PageTitle from "@/components/ui/PageTitle.vue";
 import Skeleton from "@/components/ui/Skeleton.vue";
 import {
   getDashboardSummary,
@@ -19,6 +24,8 @@ const summary = ref<DashboardSummary>({
     lowStockCount: 0,
     omzetMonth: 0,
     transaksiMonth: 0,
+    profitToday: 0,
+    profitMonth: 0,
   },
   lowStockItems: [],
   recentTransactions: [],
@@ -33,6 +40,8 @@ const summary = ref<DashboardSummary>({
   },
   weeklyPurchases: [],
   monthlyPurchases: [],
+  weeklyProfit: [],
+  monthlyProfit: [],
 });
 
 const maxDailyRevenue = computed(() => {
@@ -67,244 +76,248 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-6 pb-10">
-    <div class="pt-3">
-      <h1 class="text-2xl md:text-3xl font-bold text-foreground">Dashboard</h1>
-      <p
-        v-if="error"
-        class="text-sm text-red-500 mt-1 bg-red-500/10 p-2 rounded-lg border border-red-500/20 inline-block"
-      >
-        {{ error }}
-      </p>
-    </div>
+  <div class="space-y-6 md:space-y-10 pb-10 md:pb-12 px-0 md:px-2 overflow-x-hidden">
+    <PageTitle
+      title="Analisis"
+      highlight="Dashboard"
+      subtitle="Status: beroperasi normal"
+    >
+      <template #action>
+        <button 
+          @click="loadSummary" 
+          class="group p-4 bg-surface/40 backdrop-blur-xl border border-border rounded-2xl hover:bg-accent/10 transition-all shadow-glass text-foreground active:scale-90"
+          :disabled="loading"
+        >
+          <svg
+            class="w-5 h-5 group-hover:rotate-180 transition-transform duration-500"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6" />
+          </svg>
+        </button>
+      </template>
+    </PageTitle>
+
+    <p
+      v-if="error"
+      class="text-xs font-black text-red-500 bg-red-500/10 p-5 rounded-2xl border border-red-500/30 uppercase tracking-widest shadow-lg"
+    >
+      [ALERTI] SISTEM ERROR: {{ error }}
+    </p>
+
+    <!-- Stat Grid -->
     <StatGrid :stats="summary.stats" :loading="loading" />
-    <div class="grid gap-6 lg:grid-cols-3">
+
+    <!-- Main Charts Row -->
+    <div class="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3">
       <div class="lg:col-span-2">
         <div
           v-if="loading"
-          class="h-80 bg-surface rounded-3xl p-6 border border-border"
+          class="h-80 md:h-96 bg-surface/40 backdrop-blur-xl rounded-3xl p-5 md:p-8 border border-border shadow-glass"
         >
-          <Skeleton height="30px" width="40%" className="mb-6" />
-          <Skeleton height="200px" />
+          <Skeleton height="30px" width="40%" className="mb-8" />
+          <Skeleton height="260px" borderRadius="16px" />
         </div>
-        <SalesChart v-else :points="summary.weeklySales" />
+        <div
+          v-else
+          class="h-80 md:h-96 bg-surface/40 backdrop-blur-xl rounded-3xl p-5 md:p-8 border border-border shadow-glass"
+        >
+          <TransactionVolumeChart :points="summary.dailyMonthSales" />
+        </div>
       </div>
-      <div>
+      <div class="lg:col-span-1">
         <div
           v-if="loading"
-          class="h-80 bg-surface rounded-3xl p-6 border border-border"
+          class="h-80 md:h-96 bg-surface/40 backdrop-blur-xl rounded-3xl p-5 md:p-8 border border-border shadow-glass"
         >
-          <Skeleton height="30px" width="60%" className="mb-6" />
+          <Skeleton height="30px" width="60%" className="mb-8" />
           <Skeleton
-            height="180px"
+            height="220px"
             borderRadius="100%"
-            width="180px"
+            width="220px"
             className="mx-auto"
           />
+        </div>
+        <div
+          v-else
+          class="h-80 md:h-96 bg-surface/40 backdrop-blur-xl rounded-3xl border border-border shadow-glass"
+        >
+          <TopProductsChart :points="summary.topProducts" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Detailed Analysis -->
+    <div class="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3">
+      <div
+        class="lg:col-span-2 h-80 md:h-96 bg-surface/40 backdrop-blur-2xl rounded-3xl border border-border shadow-glass overflow-hidden group transition-all duration-500 hover:border-accent/40 flex flex-col"
+      >
+        <div
+          class="p-4 md:p-5 border-b border-border bg-accent/5 flex items-center justify-between gap-3"
+        >
+          <div>
+            <h2 class="font-black text-base md:text-lg text-foreground uppercase tracking-tight">Kurva Omzet Harian</h2>
+            <p class="text-xs text-muted font-bold mt-1 uppercase tracking-widest opacity-60">Visualisasi pendapatan realtime</p>
+          </div>
+          <span
+            class="text-xs bg-accent text-background px-3 py-1 rounded-sm font-black uppercase tracking-widest shadow-glass"
+            >Live Analysis</span
+          >
+        </div>
+        <div class="p-4 md:p-5 flex-1 min-h-0">
+          <div
+            v-if="loading"
+            class="h-full flex items-end gap-1"
+          >
+            <Skeleton
+              v-for="i in 30"
+              :key="i"
+              :height="Math.random() * 80 + 20 + '%'"
+              className="grow"
+              borderRadius="2px"
+            />
+          </div>
+          <div v-else class="h-full flex items-end gap-1 group/chart relative">
+            <div
+              v-for="point in summary?.dailyMonthSales"
+              :key="point.day"
+              class="grow bg-accent/20 hover:bg-accent hover:shadow-glass rounded-sm transition-all duration-300 relative group/bar"
+              :style="{ height: Math.max(5, (point.revenue / maxDailyRevenue) * 100) + '%' }"
+            >
+              <div
+                class="absolute -top-14 left-1/2 -translate-x-1/2 bg-foreground text-background text-xs px-3 py-2 rounded-md opacity-0 group-hover/bar:opacity-100 transition-all duration-300 scale-90 group-hover/bar:scale-100 whitespace-nowrap z-30 font-black shadow-2xl border border-background/20"
+              >
+                 TGL {{ point.day }}: Rp {{ Number(point.revenue).toLocaleString("id-ID") }}
+              </div>
+            </div>
+            <!-- Grid Lines -->
+            <div class="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-5">
+              <div v-for="i in 5" :key="i" class="border-t border-foreground w-full"></div>
+            </div>
+          </div>
+          <div
+            class="hidden md:grid grid-cols-6 mt-4 text-xs font-black text-muted uppercase tracking-widest border-t border-border pt-3 gap-y-2"
+          >
+            <span class="text-left">Start_Date</span>
+            <span class="text-center">Minimum</span>
+            <span class="text-center col-span-2">Mid_Point</span>
+            <span class="text-center">Maximum</span>
+            <span class="text-right">Today_Sync</span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="h-80 md:h-96 bg-surface/40 backdrop-blur-2xl rounded-3xl border border-border shadow-glass overflow-hidden transition-all duration-500"
+      >
+        <div v-if="loading" class="h-full p-5 md:p-8">
+          <Skeleton height="30px" width="55%" className="mb-8" />
+          <Skeleton height="260px" borderRadius="100%" width="260px" className="mx-auto" />
         </div>
         <CategoryDistributionChart v-else :points="summary.categorySales" />
       </div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-3">
-      <div
-        class="lg:col-span-2 bg-surface/60 backdrop-blur-xl rounded-2xl border border-border shadow-xl overflow-hidden transition-all duration-300"
-      >
-        <div
-          class="p-6 border-b border-border bg-muted/5 flex items-center justify-between"
-        >
-          <h2 class="font-bold text-lg">Analisis Pendapatan</h2>
-          <span
-            class="text-[10px] bg-muted/20 px-2 py-1 rounded-lg font-black text-muted uppercase tracking-widest"
-            >Live Updates</span
-          >
-        </div>
-        <div class="p-6">
-          <div
-            v-if="loading"
-            class="h-64 sm:h-80 flex items-end gap-2 md:gap-4"
-          >
-            <Skeleton
-              v-for="i in 12"
-              :key="i"
-              :height="Math.random() * 100 + 40 + 'px'"
-              className="grow"
-              borderRadius="12px"
-            />
-          </div>
-          <div v-else class="h-64 sm:h-80 flex items-end gap-2 md:gap-4 group">
-            <div
-              v-for="point in summary?.dailyMonthSales"
-              :key="point.day"
-              class="grow bg-accent/20 hover:bg-accent/40 rounded-t-xl transition-all relative group/bar"
-              :style="{ height: (point.revenue / maxDailyRevenue) * 100 + '%' }"
-            >
-              <div
-                class="absolute -top-10 left-1/2 -translate-x-1/2 bg-foreground text-background text-[10px] px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-10 font-black"
-              >
-                Rp
-                {{
-                  Number(point.revenue).toLocaleString("id-ID", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  })
-                }}
-              </div>
-            </div>
-          </div>
-          <div
-            class="flex justify-between mt-4 text-[10px] font-black text-muted uppercase tracking-widest"
-          >
-            <span>Awal Bulan</span>
-            <span>Akhir Bulan</span>
-          </div>
+    <!-- Comparison & Profit -->
+    <div class="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
+      <div class="h-80 bg-surface/40 rounded-3xl border border-border shadow-glass overflow-hidden transition-all duration-300 hover:border-accent/40">
+        <ComparisonChart
+          v-if="!loading"
+          :sales="summary.weeklySales"
+          :purchases="summary.weeklyPurchases || []"
+        />
+        <div v-else class="h-full p-5 md:p-8">
+          <Skeleton height="30px" width="40%" className="mb-6" />
+          <Skeleton height="200px" borderRadius="16px" />
         </div>
       </div>
 
-      <div
-        class="bg-surface/60 backdrop-blur-xl rounded-2xl border border-border shadow-xl overflow-hidden transition-all duration-300"
-      >
-        <div class="p-6 border-b border-border bg-muted/5">
-          <h2 class="font-bold text-lg">Produk Terlaris</h2>
-        </div>
-        <div class="p-4 space-y-4">
-          <div v-if="loading" class="space-y-4">
-            <div v-for="i in 4" :key="i" class="flex gap-4">
-              <Skeleton width="48px" height="48px" borderRadius="12px" />
-              <div class="grow space-y-2">
-                <Skeleton height="16px" width="70%" />
-                <Skeleton height="12px" width="40%" />
-              </div>
-            </div>
-          </div>
-          <div
-            v-for="product in summary?.topProducts"
-            :key="product.id"
-            class="flex items-center gap-4 p-2 hover:bg-muted/10 rounded-xl transition-colors"
-          >
-            <div
-              class="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center text-accent text-xl font-bold"
-            >
-              {{ product.name.charAt(0) }}
-            </div>
-            <div class="grow min-w-0">
-              <h4 class="font-bold text-sm truncate">{{ product.name }}</h4>
-              <p class="text-xs text-muted font-medium">
-                {{ product.sold }} terjual
-              </p>
-            </div>
-            <div class="text-right">
-              <p class="text-xs font-black text-accent tabular-nums">
-                Rp
-                {{
-                  Number(product.revenue).toLocaleString("id-ID", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  })
-                }}
-              </p>
-            </div>
-          </div>
+      <div class="h-80 bg-surface/40 rounded-3xl border border-border shadow-glass overflow-hidden transition-all duration-300 hover:border-accent/40">
+        <ProfitChart
+          v-if="!loading"
+          :points="summary.weeklyProfit"
+          title="Kurva Laba (7H)"
+          type="day"
+        />
+        <div v-else class="h-full p-5 md:p-8">
+          <Skeleton height="30px" width="40%" className="mb-6" />
+          <Skeleton height="200px" borderRadius="16px" />
         </div>
       </div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-2">
-      <div
-        class="bg-surface/60 backdrop-blur-xl rounded-2xl border border-border shadow-xl overflow-hidden transition-all duration-300"
-      >
-        <div
-          class="p-6 border-b border-border bg-muted/5 flex items-center justify-between"
-        >
-          <h2 class="font-bold text-lg">Stok Hampir Habis</h2>
-          <span
-            class="text-[10px] bg-red-500/10 text-red-500 px-2 py-1 rounded-lg font-black uppercase tracking-widest"
-            >Warning</span
-          >
-        </div>
-        <div class="p-4">
-          <div v-if="loading" class="space-y-3">
-            <Skeleton
-              v-for="i in 3"
-              :key="i"
-              height="50px"
-              borderRadius="12px"
-            />
-          </div>
-          <div class="space-y-2">
-            <div
-              v-for="item in summary?.lowStockItems"
-              :key="item.id"
-              class="flex items-center justify-between p-4 bg-muted/5 border border-border/50 rounded-xl hover:bg-red-500/5 transition-colors"
-            >
-              <span class="font-bold text-sm">{{ item.name }}</span>
-              <span
-                class="px-3 py-1 bg-red-500/10 text-red-500 rounded-lg text-[10px] font-black"
-                >Sisa {{ item.stock }}</span
-              >
-            </div>
-            <p
-              v-if="summary?.lowStockItems.length === 0"
-              class="text-center py-8 text-muted text-sm font-medium italic"
-            >
-              Semua stok masih aman.
-            </p>
-          </div>
+    <!-- Monthly Summary -->
+    <div class="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3">
+      <div class="lg:col-span-2 h-80 bg-surface/40 rounded-3xl border border-border shadow-glass overflow-hidden transition-all duration-300 hover:border-accent/40">
+        <MonthlyRevenueChart v-if="!loading" :points="summary.monthlySales" />
+        <div v-else class="h-full p-5 md:p-8">
+          <Skeleton height="30px" width="40%" className="mb-6" />
+          <Skeleton height="200px" borderRadius="16px" />
         </div>
       </div>
-
-      <div
-        class="bg-surface/60 backdrop-blur-xl rounded-2xl border border-border shadow-xl overflow-hidden transition-all duration-300"
-      >
-        <div class="p-6 border-b border-border bg-muted/5">
-          <h2 class="font-bold text-lg">Transaksi Terakhir</h2>
+      <div class="lg:col-span-1 h-80 bg-surface/40 rounded-3xl border border-border shadow-glass overflow-hidden transition-all duration-300 hover:border-accent/40">
+        <ProfitChart
+          v-if="!loading"
+          :points="summary.monthlyProfit"
+          title="Laba Kumulatif"
+          type="month"
+        />
+        <div v-else class="h-full p-5 md:p-8">
+          <Skeleton height="30px" width="40%" className="mb-6" />
+          <Skeleton height="200px" borderRadius="16px" />
         </div>
-        <div class="p-4">
-          <div v-if="loading" class="space-y-3">
-            <Skeleton
-              v-for="i in 3"
-              :key="i"
-              height="60px"
-              borderRadius="12px"
-            />
+      </div>
+    </div>
+
+    <!-- Transaction Log -->
+    <div class="grid gap-4 md:gap-6 grid-cols-1 items-start">
+      <div
+        class="h-88 md:h-96 bg-surface/40 backdrop-blur-3xl rounded-3xl border border-border shadow-glass overflow-hidden flex flex-col"
+      >
+        <div class="p-5 md:p-8 border-b border-border bg-accent/5 flex items-center justify-between gap-3">
+          <h2 class="font-black text-lg md:text-xl text-foreground uppercase tracking-tight">Log Transaksi Terakhir</h2>
+          <span class="text-xs bg-muted/20 px-3 py-1.5 rounded-sm font-black uppercase tracking-widest">Database_Sync</span>
+        </div>
+        <div class="p-4 md:p-6 flex-1 min-h-0 overflow-y-auto">
+          <div v-if="loading" class="grid sm:grid-cols-2 gap-6">
+            <Skeleton v-for="i in 4" :key="i" height="80px" borderRadius="16px" />
           </div>
-          <div class="space-y-2">
+          <div class="grid sm:grid-cols-2 gap-4">
             <div
               v-for="trx in summary?.recentTransactions"
               :key="trx.id"
-              class="flex items-center justify-between p-4 bg-muted/5 border border-border/50 rounded-xl hover:bg-accent/5 transition-colors"
+              class="flex items-center justify-between p-6 bg-surface/20 border border-border rounded-2xl hover:bg-accent/5 transition-all duration-500 shadow-sm hover:shadow-glass group"
             >
-              <div>
-                <p
-                  class="font-black text-sm text-foreground uppercase tracking-tight"
-                >
+              <div class="min-w-0 pr-4">
+                <p class="font-black text-xs md:text-sm text-foreground uppercase tracking-tighter truncate group-hover:text-accent transition-colors">
                   {{ trx.invoiceNo }}
                 </p>
-                <p class="text-[10px] text-muted font-bold">
-                  {{ new Date(trx.createdAt).toLocaleTimeString() }}
+                <p class="text-xs text-muted font-bold mt-2 tracking-widest opacity-60 uppercase">
+                  {{ new Date(trx.createdAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) }}
                 </p>
               </div>
-              <div class="text-right">
-                <p class="font-black text-accent tabular-nums">
-                  Rp
-                  {{
-                    Number(trx.total).toLocaleString("id-ID", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })
-                  }}
+              <div class="text-right shrink-0">
+                <p class="font-black text-sm md:text-lg text-accent tabular-nums tracking-tighter">
+                  Rp{{ (trx.total / 1000).toLocaleString('id-ID') }}K
                 </p>
               </div>
             </div>
-            <p
-              v-if="summary?.recentTransactions.length === 0"
-              class="text-center py-8 text-muted text-sm"
-            >
-              Belum ada transaksi hari ini.
-            </p>
           </div>
+          <p
+            v-if="summary?.recentTransactions.length === 0 && !loading"
+            class="text-center py-20 text-muted font-bold uppercase tracking-widest opacity-30"
+          >
+            BUFFER EMPTY: NO ACTIVE TRANSACTIONS
+          </p>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+

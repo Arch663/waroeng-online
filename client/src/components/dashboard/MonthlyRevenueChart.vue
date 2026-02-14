@@ -1,63 +1,51 @@
 ﻿<script setup lang="ts">
-import {
-  Chart,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  BarController,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-} from "vue";
-import { useTheme } from "@/composables/useTheme";
-
-Chart.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  BarController,
-  Title,
-  Tooltip,
-  Legend,
-);
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { Chart } from "chart.js/auto";
 
 const props = defineProps<{
-  points: Array<{
-    month?: string;
-    revenue: number;
-  }>;
+  points: Array<{ month?: string; revenue: number }>;
 }>();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
-const chartInstance = ref<Chart<"bar"> | null>(null);
-const { isDark } = useTheme();
+let chart: Chart | null = null;
 
-const labels = computed(() => props.points?.map((p) => p.month ?? "") ?? []);
-const values = computed(() => props.points?.map((p) => p.revenue ?? 0) ?? []);
-
-function buildConfig() {
-  const text = isDark.value ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)";
-  const grid = isDark.value ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
-
+function getChartColors() {
+  const css = getComputedStyle(document.documentElement);
   return {
-    type: "bar" as const,
+    text: css.getPropertyValue("--foreground").trim() || "#000",
+    grid: css.getPropertyValue("--border").trim() || "#ccc",
+    accent: css.getPropertyValue("--accent").trim() || "#6366f1",
+    bg: css.getPropertyValue("--background").trim() || "#fff",
+  };
+}
+
+function draw() {
+  if (!canvasRef.value) return;
+  const ctx = canvasRef.value.getContext("2d");
+  if (!ctx) return;
+
+  const c = getChartColors();
+  const labels = props.points.map((p) => p.month || "");
+  const data = props.points.map((p) => p.revenue);
+
+  if (chart) chart.destroy();
+
+  const config: any = {
+    type: "bar",
     data: {
-      labels: labels.value,
+      labels,
       datasets: [
         {
           label: "Pendapatan",
-          data: values.value,
-          backgroundColor: "#6366F1",
-          borderRadius: 8,
-          hoverBackgroundColor: "#4F46E5",
+          data,
+          backgroundColor: c.accent + "33",
+          hoverBackgroundColor: c.accent,
+          borderColor: c.accent + "66",
+          hoverBorderColor: c.accent,
+          borderWidth: 1,
+          borderRadius: 12,
+          barPercentage: 0.6,
+          categoryPercentage: 0.8,
         },
       ],
     },
@@ -65,93 +53,88 @@ function buildConfig() {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: {
-          display: false,
-        },
+        legend: { display: false },
         tooltip: {
-          backgroundColor: isDark.value ? "#1e1e1e" : "#fff",
-          titleColor: isDark.value ? "#fff" : "#000",
-          bodyColor: isDark.value ? "#fff" : "#000",
-          borderColor: isDark.value
-            ? "rgba(255,255,255,0.1)"
-            : "rgba(0,0,0,0.1)",
+          backgroundColor: c.bg,
+          titleColor: c.text,
+          bodyColor: c.text,
+          borderColor: c.grid,
           borderWidth: 1,
           padding: 12,
           callbacks: {
             label(context: any) {
-              return `Rp ${context.parsed.y.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+              return `Rp ${context.parsed.y.toLocaleString("id-ID")}`;
             },
           },
         },
       },
       scales: {
         x: {
-          ticks: { color: text },
+          ticks: { color: c.text, font: { weight: "bold", size: 10 } },
           grid: { display: false },
         },
         y: {
+          beginAtZero: true,
           ticks: {
-            color: text,
-            callback: (value: any) => "Rp " + value / 1000 + "k",
+            color: c.text,
+            font: { size: 10 },
+            callback: (val: any) => "Rp" + (val >= 1000 ? val / 1000 + "k" : val),
           },
-          grid: { color: grid },
+          grid: { color: c.grid, drawTicks: false, borderDash: [5, 5] },
         },
       },
     },
   };
-}
 
-function createChart() {
-  if (!canvasRef.value) return;
-  if (chartInstance.value) chartInstance.value.destroy();
-  chartInstance.value = new Chart(canvasRef.value, buildConfig() as any);
-}
-
-function updateChart() {
-  if (!chartInstance.value) {
-    createChart();
-    return;
-  }
-  const cfg = buildConfig();
-  chartInstance.value.data = cfg.data;
-  chartInstance.value.options = cfg.options as any;
-  chartInstance.value.update();
+  chart = new Chart(ctx, config);
 }
 
 watch(
   () => props.points,
   async () => {
     await nextTick();
-    updateChart();
+    draw();
   },
   { deep: true },
 );
 
-watch(isDark, updateChart);
-
 onMounted(async () => {
   await nextTick();
-  createChart();
+  draw();
+  window.addEventListener("resize", draw);
 });
 
 onBeforeUnmount(() => {
-  chartInstance.value?.destroy();
+  if (chart) chart.destroy();
+  window.removeEventListener("resize", draw);
 });
 </script>
 
 <template>
-  <div
-    class="bg-surface rounded-3xl p-6 h-80 flex flex-col border border-border"
-  >
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="font-bold text-lg">Pendapatan Bulanan</h3>
-      <span
-        class="text-xs font-medium text-muted px-2 py-1 bg-muted/10 rounded-lg"
-        >6 Bulan</span
-      >
+  <div class="p-8 h-80 flex flex-col">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h3 class="text-xs font-black text-muted uppercase tracking-widest mb-2">Revenue Growth</h3>
+        <h2 class="text-2xl font-black text-foreground uppercase tracking-tight">Omzet Bulanan</h2>
+      </div>
+      <div class="w-10 h-10 flex items-center justify-center bg-accent/10 text-accent rounded-xl shadow-glass">
+        <svg
+          class="w-5 h-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M3 3v18h18" />
+          <path d="M7 16l3-4 4 2 3-5" />
+        </svg>
+      </div>
     </div>
-    <div class="grow min-h-0">
+    <div class="flex-1 min-h-0">
       <canvas ref="canvasRef"></canvas>
     </div>
   </div>
 </template>
+

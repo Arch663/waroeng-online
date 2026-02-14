@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from "vue";
 import { getReportsSummary, type ReportSummary } from "@/services/dashboardApi";
 import { getInventoryItems } from "@/services/inventoryApi";
 import Skeleton from "@/components/ui/Skeleton.vue";
+import PageTitle from "@/components/ui/PageTitle.vue";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -46,15 +47,15 @@ async function handleDownloadPDF() {
         ["Total Transaksi", summary.value.sales.total_sales.toString()],
         [
           "Omzet Kotor",
-          `Rp ${Number(summary.value.sales.gross_revenue).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+          `Rp ${Number(summary.value.sales.gross_revenue || 0).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
         ],
         [
           "Pengeluaran (Stok)",
-          `Rp ${Number(summary.value.sales.total_expenses).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+          `Rp ${Number(summary.value.sales.total_expenses || 0).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
         ],
         [
           "Profit Bersih",
-          `Rp ${Number(summary.value.sales.profit).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+          `Rp ${Number(summary.value.sales.profit || 0).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
         ],
       ],
       theme: "striped",
@@ -73,7 +74,7 @@ async function handleDownloadPDF() {
       body: summary.value.topProducts.map((p) => [
         p.name || "-",
         p.total_qty.toString(),
-        `Rp ${Number(p.total_revenue).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+        `Rp ${Number(p.total_revenue || 0).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
       ]),
     });
   }
@@ -109,38 +110,32 @@ onMounted(loadReport);
 </script>
 
 <template>
-  <div class="space-y-6 pb-12">
-    <div
-      class="flex flex-col md:flex-row md:items-center justify-between gap-4"
+  <div class="space-y-10 pb-12 px-2 md:px-0">
+    <PageTitle
+      title="Laporan"
+      highlight="Bisnis"
+      subtitle="Documents: sales profit intelligence"
     >
-      <div>
-        <h1 class="text-2xl md:text-3xl font-bold text-foreground">
-          Laporan Bisnis
-        </h1>
-        <p class="text-xs md:text-sm text-muted">
-          Analisis performa penjualan dan profitabilitas
-        </p>
-      </div>
-
-      <div class="flex flex-col sm:flex-row items-center gap-4">
+      <template #action>
+        <div class="flex flex-col sm:flex-row items-center gap-4">
         <div
-          class="flex bg-surface/60 backdrop-blur-md p-1 rounded-2xl border border-border"
+          class="flex bg-surface/30 backdrop-blur-2xl p-1.5 rounded-2xl border border-border/50 shadow-glass"
         >
           <button
             v-for="p in [
-              { id: 'day', l: 'Hari' },
-              { id: 'week', l: 'Minggu' },
-              { id: 'month', l: 'Bulan' },
-              { id: 'year', l: 'Tahun' },
+              { id: 'day', l: 'Today' },
+              { id: 'week', l: 'Week' },
+              { id: 'month', l: 'Month' },
+              { id: 'year', l: 'Year' },
             ]"
             :key="p.id"
             @click="period = p.id"
             :disabled="loading"
             :class="[
-              'px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all',
+              'px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all',
               period === p.id
-                ? 'bg-accent text-white shadow-lg shadow-accent/20'
-                : 'text-muted hover:text-foreground',
+                ? 'bg-accent text-background shadow-glass'
+                : 'text-muted hover:text-foreground hover:bg-accent/5',
             ]"
           >
             {{ p.l }}
@@ -150,7 +145,7 @@ onMounted(loadReport);
         <button
           @click="handleDownloadPDF"
           :disabled="loading || !summary"
-          class="w-full sm:w-auto px-6 py-2.5 bg-foreground text-background rounded-2xl font-bold hover:scale-105 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+          class="w-full sm:w-auto px-8 py-3.5 bg-foreground text-background rounded-2xl font-black uppercase tracking-widest hover:shadow-glass hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 text-xs"
         >
           <svg
             class="w-4 h-4"
@@ -165,10 +160,11 @@ onMounted(loadReport);
               d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          Cetak PDF
+          Export PDF
         </button>
-      </div>
-    </div>
+        </div>
+      </template>
+    </PageTitle>
 
     <div
       v-if="loading && !summary"
@@ -182,7 +178,7 @@ onMounted(loadReport);
         class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border shadow-xl group hover:border-accent/30 transition-all duration-300"
       >
         <p
-          class="text-[10px] font-black text-muted uppercase tracking-widest mb-2"
+          class="text-xs font-black text-muted uppercase tracking-widest mb-2"
         >
           Total Transaksi
         </p>
@@ -190,78 +186,69 @@ onMounted(loadReport);
           {{ summary?.sales.total_sales || 0 }}
         </h3>
         <div
-          class="mt-4 flex items-center gap-2 text-[10px] text-green-500 font-black bg-green-500/10 px-2 py-1 rounded-full w-fit uppercase"
+          class="mt-4 flex items-center gap-2 text-xs text-accent font-black bg-accent/10 px-2 py-1 rounded-full w-fit uppercase"
         >
-          <span>â†‘</span> Success
+          <span>↑</span> Healthy
         </div>
       </div>
 
       <div
-        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border shadow-xl border-l-4 border-l-blue-500 group hover:border-blue-500/30 transition-all duration-300"
+        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border shadow-xl border-l-4 border-l-accent/60 group hover:border-accent/40 transition-all duration-300"
       >
         <p
-          class="text-[10px] font-black text-muted uppercase tracking-widest mb-2"
+          class="text-xs font-black text-muted uppercase tracking-widest mb-2"
         >
           Omzet Kotor
         </p>
         <h3 class="text-3xl font-black text-foreground">
           <span class="text-sm font-medium mr-1 text-foreground/60">Rp</span
           >{{
-            Number(summary?.sales.gross_revenue).toLocaleString("id-ID", {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            }) || 0
+            (Number(summary?.sales?.gross_revenue) || 0).toLocaleString("id-ID")
           }}
         </h3>
         <p
-          class="text-[10px] text-muted mt-4 font-bold uppercase tracking-tight"
+          class="text-xs text-muted mt-4 font-bold uppercase tracking-tight"
         >
-          Total pendapatan bruto
+          Total pendapatan
         </p>
       </div>
 
       <div
-        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border shadow-xl border-l-4 border-l-red-500 group hover:border-red-500/30 transition-all duration-300"
+        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border shadow-xl border-l-4 border-l-foreground/30 group hover:border-accent/30 transition-all duration-300"
       >
         <p
-          class="text-[10px] font-black text-muted uppercase tracking-widest mb-2"
+          class="text-xs font-black text-muted uppercase tracking-widest mb-2"
         >
           Pengeluaran (Stok)
         </p>
-        <h3 class="text-3xl font-black text-red-500">
-          <span class="text-sm font-medium mr-1 text-red-500/60">Rp</span
+        <h3 class="text-3xl font-black text-foreground">
+          <span class="text-sm font-medium mr-1 text-foreground/60">Rp</span
           >{{
-            Number(summary?.sales.total_expenses).toLocaleString("id-ID", {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            }) || 0
+            (Number(summary?.sales?.total_expenses) || 0).toLocaleString(
+              "id-ID",
+            )
           }}
         </h3>
         <p
-          class="text-[10px] text-muted mt-4 font-bold uppercase tracking-tight"
+          class="text-xs text-muted mt-4 font-bold uppercase tracking-tight"
         >
           Total pembelian barang
         </p>
       </div>
 
       <div
-        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border shadow-xl border-l-4 border-l-green-500 group hover:border-green-500/30 transition-all duration-300"
+        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border shadow-xl border-l-4 border-l-accent group hover:border-accent/40 transition-all duration-300"
       >
         <p
-          class="text-[10px] font-black text-muted uppercase tracking-widest mb-2"
+          class="text-xs font-black text-muted uppercase tracking-widest mb-2"
         >
           Profit Bersih
         </p>
-        <h3 class="text-3xl font-black text-green-500">
-          <span class="text-sm font-medium mr-1 text-green-500/60">Rp</span
-          >{{
-            Number(summary?.sales.profit).toLocaleString("id-ID", {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            }) || 0
-          }}
+        <h3 class="text-3xl font-black text-accent">
+          <span class="text-sm font-medium mr-1 text-accent/60">Rp</span>
+          {{ (Number(summary?.sales?.profit) || 0).toLocaleString("id-ID") }}
         </h3>
-        <p class="text-[10px] text-muted mt-4 font-medium italic opacity-60">
+        <p class="text-xs text-muted mt-4 font-medium italic opacity-60">
           * Omzet - Pengeluaran
         </p>
       </div>
@@ -285,14 +272,14 @@ onMounted(loadReport);
         >
           <h2 class="font-bold text-lg">Performa Kategori</h2>
           <span
-            class="text-[10px] bg-muted/20 px-2 py-1 rounded-lg font-black text-muted uppercase tracking-widest"
+            class="text-xs bg-muted/20 px-2 py-1 rounded-lg font-black text-muted uppercase tracking-widest"
             >Revenue</span
           >
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left">
             <thead
-              class="bg-muted/5 text-[10px] uppercase font-black text-muted tracking-widest"
+              class="bg-muted/5 text-xs uppercase font-black text-muted tracking-widest"
             >
               <tr>
                 <th class="px-6 py-4">Kategori</th>
@@ -313,11 +300,11 @@ onMounted(loadReport);
                   {{ c.units_sold }}
                 </td>
                 <td
-                  class="px-6 py-4 text-right tabular-nums font-black text-blue-500 text-sm"
+                  class="px-6 py-4 text-right tabular-nums font-black text-accent text-sm"
                 >
                   Rp
                   {{
-                    Number(c.revenue).toLocaleString("id-ID", {
+                    Number(c.revenue || 0).toLocaleString("id-ID", {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 0,
                     })
@@ -346,14 +333,14 @@ onMounted(loadReport);
         >
           <h2 class="font-bold text-lg">Produk Terlaris</h2>
           <span
-            class="text-[10px] bg-muted/20 px-2 py-1 rounded-lg font-black text-muted uppercase tracking-widest"
+            class="text-xs bg-muted/20 px-2 py-1 rounded-lg font-black text-muted uppercase tracking-widest"
             >Volume</span
           >
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left">
             <thead
-              class="bg-muted/5 text-[10px] uppercase font-black text-muted tracking-widest"
+              class="bg-muted/5 text-xs uppercase font-black text-muted tracking-widest"
             >
               <tr>
                 <th class="px-6 py-4">Produk</th>
@@ -374,14 +361,14 @@ onMounted(loadReport);
                 </td>
                 <td class="px-6 py-4 text-center">
                   <span
-                    class="px-2 py-1 bg-accent/10 text-accent rounded-lg text-[10px] font-black"
+                    class="px-2 py-1 bg-accent/10 text-accent rounded-lg text-xs font-black"
                     >{{ p.total_qty }}</span
                   >
                 </td>
                 <td class="px-6 py-4 text-right tabular-nums font-bold text-sm">
                   Rp
                   {{
-                    Number(p.total_revenue).toLocaleString("id-ID", {
+                    Number(p.total_revenue || 0).toLocaleString("id-ID", {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 0,
                     })
@@ -406,3 +393,4 @@ onMounted(loadReport);
     </div>
   </div>
 </template>
+

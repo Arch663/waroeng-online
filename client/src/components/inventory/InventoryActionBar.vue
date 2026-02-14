@@ -1,4 +1,6 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
+import PageTitle from "@/components/ui/PageTitle.vue";
+
 defineProps<{
   searchQuery: string;
 }>();
@@ -7,16 +9,21 @@ defineEmits(["add", "search"]);
 </script>
 
 <template>
-  <div class="pt-3 space-y-4">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl md:text-3xl font-bold text-foreground">Inventory</h1>
-      <button
-        @click="$emit('add')"
-        class="px-5 py-2.5 bg-accent text-white rounded-xl font-bold shadow-lg shadow-accent/20 hover:scale-105 transition-transform active:scale-95"
-      >
-        + Tambah Barang
-      </button>
-    </div>
+  <div class="pt-6 space-y-8">
+    <PageTitle
+      title="Inventori"
+      highlight="Barang"
+      subtitle="Unit-00: stock management system"
+    >
+      <template #action>
+        <button
+          @click="$emit('add')"
+          class="px-6 py-4 bg-accent text-background rounded-2xl font-black uppercase tracking-widest shadow-glass hover:shadow-accent/40 hover:-translate-y-1 transition-all active:scale-95 text-xs md:text-sm"
+        >
+          + Add New Unit
+        </button>
+      </template>
+    </PageTitle>
 
     <!-- Search Bar -->
     <div class="relative group">
@@ -24,7 +31,7 @@ defineEmits(["add", "search"]);
         class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-muted transition-colors group-focus-within:text-accent"
       >
         <svg
-          class="w-5 h-5"
+          class="w-5 h-5 opacity-50"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -40,10 +47,11 @@ defineEmits(["add", "search"]);
       <input
         :value="searchQuery"
         type="text"
-        placeholder="Cari SKU atau nama barang..."
-        class="w-full bg-surface/60 backdrop-blur-xl border border-border rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent shadow-sm transition-all placeholder:text-muted/60"
+        placeholder="SCAN SKU OR IDENTIFY UNIT NAME..."
+        class="w-full bg-surface/40 backdrop-blur-2xl border border-border rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:ring-4 focus:ring-accent/10 focus:border-accent shadow-glass transition-all placeholder:text-muted/40 placeholder:font-black placeholder:text-xs placeholder:tracking-widest"
         @input="$emit('search', ($event.target as HTMLInputElement).value)"
       />
     </div>
   </div>
 </template>
+

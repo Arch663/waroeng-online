@@ -3,8 +3,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Chart } from "chart.js/auto";
 
 const props = defineProps<{
-  sales: Array<{ day?: string; revenue: number }>;
-  purchases: Array<{ day?: string; amount: number }>;
+  points: Array<{ name: string; revenue: number }>;
 }>();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -26,90 +25,77 @@ function draw() {
   if (!ctx) return;
 
   const c = getChartColors();
-  const labels = props.sales.map((s) => s.day || "");
-  const salesData = props.sales.map((s) => s.revenue);
-  const purchaseData = props.purchases.map((p) => p.amount);
+  const topPoints = [...props.points]
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5);
+
+  const labels = topPoints.map((item) => item.name);
+  const data = topPoints.map((item) => item.revenue);
 
   if (chart) chart.destroy();
 
-  const config: any = {
+  chart = new Chart(ctx, {
     type: "bar",
     data: {
       labels,
       datasets: [
         {
           label: "Revenue",
-          data: salesData,
+          data,
           backgroundColor: c.accent + "33",
           hoverBackgroundColor: c.accent,
           borderColor: c.accent + "66",
           hoverBorderColor: c.accent,
           borderWidth: 1,
           borderRadius: 8,
-          barPercentage: 0.5,
-        },
-        {
-          label: "Stock Out",
-          data: purchaseData,
-          backgroundColor: c.accent + "55",
-          hoverBackgroundColor: c.accent,
-          borderColor: c.accent + "66",
-          hoverBorderColor: c.accent,
-          borderWidth: 1,
-          borderRadius: 8,
-          barPercentage: 0.5,
         },
       ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      indexAxis: "y",
       plugins: {
-        legend: {
-          display: true,
-          position: "top",
-          align: "end",
-          labels: {
-            color: c.text,
-            usePointStyle: true,
-            boxWidth: 8,
-            font: { weight: "black", size: 10 },
-          },
-        },
+        legend: { display: false },
         tooltip: {
           backgroundColor: c.bg,
           titleColor: c.text,
           bodyColor: c.text,
           borderColor: c.grid,
           borderWidth: 1,
-          padding: 12,
           callbacks: {
             label(context: any) {
-              return `${context.dataset.label}: Rp ${context.parsed.y.toLocaleString("id-ID")}`;
+              return `Revenue: Rp ${context.parsed.x.toLocaleString("id-ID")}`;
             },
           },
         },
       },
       scales: {
-        x: { ticks: { color: c.text, font: { weight: "bold", size: 10 } }, grid: { display: false } },
-        y: {
-          beginAtZero: true,
+        x: {
           ticks: {
             color: c.text,
             font: { size: 10 },
-            callback: (val: any) => "Rp" + (val >= 1000 ? val / 1000 + "k" : val),
+            callback(value: string | number) {
+              const numValue = Number(value);
+              return numValue >= 1000 ? `${Math.round(numValue / 1000)}K` : numValue;
+            },
           },
-          grid: { color: c.grid, drawTicks: false, borderDash: [5, 5] },
+          grid: { color: c.grid, drawTicks: false },
+        },
+        y: {
+          ticks: {
+            color: c.text,
+            font: { weight: "bold", size: 10 },
+          },
+          grid: { display: false },
         },
       },
     },
-  };
-
-  chart = new Chart(ctx, config);
+  });
 }
 
 watch(
-  () => [props.sales, props.purchases],
+  () => props.points,
   async () => {
     await nextTick();
     draw();
@@ -130,13 +116,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="p-8 h-80 flex flex-col">
-    <div class="flex items-center justify-between mb-8">
+  <div class="p-5 md:p-8 h-full flex flex-col">
+    <div class="flex items-center justify-between mb-6">
       <div>
-        <h3 class="text-xs font-black text-muted uppercase tracking-widest mb-2">Financial Flow</h3>
-        <h2 class="text-2xl font-black text-foreground uppercase tracking-tight">Revenue vs Stok</h2>
+        <h3 class="text-xs font-black text-muted uppercase tracking-widest mb-1">Revenue Ranking</h3>
+        <h2 class="text-xl md:text-2xl font-black text-foreground uppercase tracking-tight">Top Produk</h2>
       </div>
-      <div class="w-10 h-10 flex items-center justify-center bg-accent/10 text-accent rounded-xl shadow-glass">
+      <div class="w-9 h-9 flex items-center justify-center bg-accent/10 text-accent rounded-xl shadow-glass">
         <svg
           class="w-5 h-5"
           viewBox="0 0 24 24"
@@ -146,9 +132,7 @@ onBeforeUnmount(() => {
           stroke-linecap="round"
           stroke-linejoin="round"
         >
-          <path d="M3 3v18h18" />
-          <path d="M7 14l4-4 3 3 4-6" />
-          <path d="M7 18h9" />
+          <path d="M12 2l2.9 5.88L21 8.76l-4.5 4.39 1.06 6.2L12 16.77 6.44 19.35l1.06-6.2L3 8.76l6.1-.88L12 2z" />
         </svg>
       </div>
     </div>

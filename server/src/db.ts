@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
+import { seedDatabase } from "./dbSeeder";
 
 dotenv.config();
 
@@ -8,8 +9,8 @@ const pool = new Pool({
   host: process.env.PGHOST ?? "localhost",
   port: Number(process.env.PGPORT ?? 5432),
   user: process.env.PGUSER ?? "postgres",
-  password: process.env.PGPASSWORD ?? "",
-  database: process.env.PGDATABASE ?? "postgres",
+  password: process.env.PGPASSWORD ?? "3211",
+  database: process.env.PGDATABASE ?? "waroeng",
 });
 
 export async function initializeDatabase() {
@@ -216,6 +217,8 @@ export async function initializeDatabase() {
 
     console.log("Default users created: admin/admin123 and kasir/kasir123");
   }
+
+  await seedDatabase(pool);
 }
 
 export { pool };
