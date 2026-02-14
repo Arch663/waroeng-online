@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { DATABASE_API_URL } from "@/config/api";
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -19,7 +20,7 @@ async function handleLogin() {
 
   try {
     const res = await fetch(
-      `${import.meta.env.VITE_DATABASE_API_URL}/auth/login`,
+      `${DATABASE_API_URL}/auth/login`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -1,4 +1,9 @@
-export const DATABASE_API_URL = import.meta.env.VITE_DATABASE_API_URL;
+const runtimeOrigin =
+  typeof window !== "undefined" ? window.location.origin : "";
+
+export const DATABASE_API_URL = (
+  import.meta.env.VITE_DATABASE_API_URL ?? runtimeOrigin
+).replace(/\/$/, "");
 export const API_BASE_URL = DATABASE_API_URL; // alias for compatibility
 
 // Backward compatible with previous variable names.

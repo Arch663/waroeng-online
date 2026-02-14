@@ -1,7 +1,11 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!auth(?:/|$)|categories(?:/|$)|inventory(?:/|$)|cashier(?:/|$)|dashboard(?:/|$)|reports(?:/|$)|suppliers(?:/|$)|purchases(?:/|$)|health(?:/|$)).*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/",
       "destination": "/index.html"
     }
   ]

@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { DATABASE_API_URL } from "@/config/api";
 
 const router = useRouter();
 
@@ -21,7 +22,7 @@ async function handleRegister() {
 
   try {
     const res = await fetch(
-      `${import.meta.env.VITE_DATABASE_API_URL}/auth/register`,
+      `${DATABASE_API_URL}/auth/register`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
