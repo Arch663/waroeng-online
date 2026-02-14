@@ -9,7 +9,7 @@ defineEmits(["add", "search"]);
 </script>
 
 <template>
-  <div class="pt-6 space-y-8">
+  <div class="space-y-8">
     <PageTitle
       title="Inventori"
       highlight="Barang"

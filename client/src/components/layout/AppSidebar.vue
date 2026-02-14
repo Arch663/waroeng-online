@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useTheme } from "@/composables/useTheme";
+import AppLogo from "@/components/ui/AppLogo.vue";
 
 type MenuIcon = "dashboard" | "cashier" | "inventory" | "purchase" | "supplier" | "report";
 
@@ -63,15 +64,7 @@ const iconPaths: Record<MenuIcon, string[]> = {
     @mouseleave="isExpanded = false"
   >
     <div class="p-4" :class="isExpanded ? 'px-6 pt-8 pb-4' : 'px-4 pt-6 pb-3'">
-      <div class="flex items-center" :class="isExpanded ? 'gap-4' : 'justify-center'">
-        <div class="w-12 h-12 bg-accent rounded-2xl flex items-center justify-center text-background text-2xl font-black shadow-glass">
-          W
-        </div>
-        <div v-show="isExpanded">
-          <h1 class="text-xl font-black text-foreground tracking-tighter uppercase leading-none">Waroeng</h1>
-          <p class="text-xs font-black text-accent tracking-widest uppercase mt-1">Online Ops</p>
-        </div>
-      </div>
+      <AppLogo :compact="!isExpanded" subtitle="Online" />
     </div>
 
     <nav class="flex-1 px-3 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-accent/35 scrollbar-track-transparent">
