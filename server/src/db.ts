@@ -6,28 +6,26 @@ import { seedDatabase } from "./dbSeeder";
 dotenv.config();
 
 const isProduction = process.env.NODE_ENV === "production";
-const hasSupabaseUrlOnly =
+const hasApiUrlWithoutPostgres =
   Boolean(process.env.SUPABASE_URL) &&
   Boolean(process.env.SUPABASE_KEY) &&
-  !process.env.SUPABASE_DB_URL &&
+  !process.env.POSTGRES_URL &&
+  !process.env.POSTGRES_PRISMA_URL &&
+  !process.env.POSTGRES_URL_NON_POOLING &&
   !process.env.DATABASE_URL &&
-  !process.env.POSTGRES_URL;
+  !process.env.SUPABASE_DB_URL;
 
-if (hasSupabaseUrlOnly) {
-  console.warn(
-    "[db] SUPABASE_URL/SUPABASE_KEY terdeteksi, tapi pg.Pool tetap membutuhkan connection string Postgres.",
-  );
-  console.warn(
-    "[db] Set SUPABASE_DB_URL (atau DATABASE_URL/POSTGRES_URL) dari Supabase Database Connection String.",
-  );
+if (hasApiUrlWithoutPostgres) {
+  console.warn("[db] SUPABASE_URL/SUPABASE_KEY terdeteksi, tapi pg.Pool butuh connection string Postgres.");
+  console.warn("[db] Untuk Vercel: set POSTGRES_URL (atau DATABASE_URL).");
 }
 
 const connectionString =
-  process.env.SUPABASE_DB_URL ||
-  process.env.DATABASE_URL ||
   process.env.POSTGRES_URL ||
   process.env.POSTGRES_PRISMA_URL ||
-  process.env.POSTGRES_URL_NON_POOLING;
+  process.env.POSTGRES_URL_NON_POOLING ||
+  process.env.DATABASE_URL ||
+  process.env.SUPABASE_DB_URL;
 
 const pool = connectionString
   ? new Pool({
