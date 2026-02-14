@@ -5,13 +5,31 @@ import { seedDatabase } from "./dbSeeder";
 
 dotenv.config();
 
-const pool = new Pool({
-  host: process.env.PGHOST ?? "localhost",
-  port: Number(process.env.PGPORT ?? 5432),
-  user: process.env.PGUSER ?? "postgres",
-  password: process.env.PGPASSWORD ?? "3211",
-  database: process.env.PGDATABASE ?? "waroeng",
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
 });
+
+declare global {
+  var _pool: Pool | undefined;
+}
+
+export const pool =
+  global._pool ??
+  new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl:
+      process.env.NODE_ENV === "production"
+        ? { rejectUnauthorized: false }
+        : false,
+  });
+
+if (process.env.NODE_ENV !== "production") {
+  global._pool = pool;
+}
 
 export async function initializeDatabase() {
   await pool.query(`
