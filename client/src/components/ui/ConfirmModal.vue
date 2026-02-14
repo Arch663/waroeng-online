@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -18,11 +18,11 @@ const emit = defineEmits<{
 const variantClasses = computed(() => {
   switch (props.variant) {
     case "danger":
-      return "bg-red-600 hover:bg-red-700 text-white";
+      return "bg-red-500 hover:bg-red-600 text-white shadow-red-500/30";
     case "warning":
-      return "bg-yellow-600 hover:bg-yellow-700 text-white";
+      return "bg-orange-500 hover:bg-orange-600 text-white shadow-orange-500/30";
     default:
-      return "bg-accent hover:bg-accent/90 text-white";
+      return "bg-accent hover:bg-accent/90 text-background shadow-glass";
   }
 });
 </script>
@@ -31,36 +31,45 @@ const variantClasses = computed(() => {
   <Transition name="modal">
     <div
       v-if="open"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      class="fixed inset-0 z-100 flex items-center justify-center p-6 bg-background/60 backdrop-blur-md"
       @click.self="emit('cancel')"
     >
       <div
-        class="bg-surface border border-border rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 animate-scale-in"
+        class="bg-surface/30 backdrop-blur-3xl border border-glass-border rounded-4xl shadow-glass max-w-md w-full p-10 space-y-8 relative overflow-hidden transition-all duration-300 scale-100"
       >
-        <div class="space-y-2">
-          <h3 class="text-lg font-semibold text-foreground">
-            {{ title || "Konfirmasi" }}
-          </h3>
-          <p class="text-sm text-muted">
-            {{ message || "Apakah Anda yakin ingin melanjutkan aksi ini?" }}
+        <!-- Decorative bar -->
+        <div 
+          class="absolute top-0 left-0 w-2 h-full"
+          :class="variant === 'danger' ? 'bg-red-500' : variant === 'warning' ? 'bg-orange-500' : 'bg-accent'"
+        ></div>
+
+        <div class="space-y-4">
+          <div class="flex flex-col">
+            <span class="text-xs font-black text-accent tracking-widest uppercase mb-2">Decision_Required</span>
+            <h3 class="text-3xl font-black text-foreground uppercase tracking-tighter leading-none">
+              {{ title || "Confirm" }}
+            </h3>
+          </div>
+          <p class="text-sm font-bold text-muted uppercase tracking-widest leading-loose opacity-70">
+            {{ message || "Please confirm the execution of this protocol to proceed with the operation." }}
           </p>
         </div>
 
-        <div class="flex gap-3 justify-end pt-2">
+        <div class="flex gap-4 pt-4">
           <button
             @click="emit('cancel')"
-            class="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted/10 transition"
+            class="flex-1 py-4 text-xs font-black uppercase tracking-widest border border-glass-border rounded-xl hover:bg-muted/10 transition-all text-foreground"
           >
-            {{ cancelText || "Batal" }}
+            {{ cancelText || "Abort" }}
           </button>
           <button
             @click="emit('confirm')"
             :class="[
               variantClasses,
-              'px-4 py-2 text-sm rounded-lg transition font-medium',
+              'flex-1 py-4 text-xs font-black uppercase tracking-widest rounded-xl transition-all active:scale-95',
             ]"
           >
-            {{ confirmText || "Konfirmasi" }}
+            {{ confirmText || "Execute" }}
           </button>
         </div>
       </div>
@@ -71,7 +80,7 @@ const variantClasses = computed(() => {
 <style scoped>
 .modal-enter-active,
 .modal-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.3s ease;
 }
 
 .modal-enter-from,
@@ -79,18 +88,6 @@ const variantClasses = computed(() => {
   opacity: 0;
 }
 
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-scale-in {
-  animation: scale-in 0.2s ease-out;
-}
 </style>
+
+

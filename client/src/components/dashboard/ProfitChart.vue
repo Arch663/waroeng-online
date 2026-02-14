@@ -3,8 +3,9 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Chart } from "chart.js/auto";
 
 const props = defineProps<{
-  sales: Array<{ day?: string; revenue: number }>;
-  purchases: Array<{ day?: string; amount: number }>;
+  points: Array<{ day?: string; month?: string; profit: number }>;
+  title?: string;
+  type?: "day" | "month";
 }>();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -26,38 +27,29 @@ function draw() {
   if (!ctx) return;
 
   const c = getChartColors();
-  const labels = props.sales.map((s) => s.day || "");
-  const salesData = props.sales.map((s) => s.revenue);
-  const purchaseData = props.purchases.map((p) => p.amount);
+  const labels = props.points.map((p) => (props.type === "day" ? p.day : p.month) || "");
+  const data = props.points.map((p) => p.profit);
 
   if (chart) chart.destroy();
 
   const config: any = {
-    type: "bar",
+    type: "line",
     data: {
       labels,
       datasets: [
         {
-          label: "Revenue",
-          data: salesData,
-          backgroundColor: c.accent + "33",
-          hoverBackgroundColor: c.accent,
-          borderColor: c.accent + "66",
-          hoverBorderColor: c.accent,
-          borderWidth: 1,
-          borderRadius: 8,
-          barPercentage: 0.5,
-        },
-        {
-          label: "Stock Out",
-          data: purchaseData,
-          backgroundColor: c.accent + "55",
-          hoverBackgroundColor: c.accent,
-          borderColor: c.accent + "66",
-          hoverBorderColor: c.accent,
-          borderWidth: 1,
-          borderRadius: 8,
-          barPercentage: 0.5,
+          label: "Laba Bersih",
+          data,
+          borderColor: c.accent,
+          backgroundColor: c.accent + "22",
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointHoverRadius: 9,
+          pointBackgroundColor: c.accent,
+          pointBorderColor: c.bg,
+          pointBorderWidth: 2,
+          borderWidth: 3,
         },
       ],
     },
@@ -65,17 +57,7 @@ function draw() {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: {
-          display: true,
-          position: "top",
-          align: "end",
-          labels: {
-            color: c.text,
-            usePointStyle: true,
-            boxWidth: 8,
-            font: { weight: "black", size: 10 },
-          },
-        },
+        legend: { display: false },
         tooltip: {
           backgroundColor: c.bg,
           titleColor: c.text,
@@ -83,21 +65,25 @@ function draw() {
           borderColor: c.grid,
           borderWidth: 1,
           padding: 12,
+          displayColors: false,
           callbacks: {
             label(context: any) {
-              return `${context.dataset.label}: Rp ${context.parsed.y.toLocaleString("id-ID")}`;
+              return `Laba: Rp ${context.parsed.y.toLocaleString("id-ID")}`;
             },
           },
         },
       },
       scales: {
-        x: { ticks: { color: c.text, font: { weight: "bold", size: 10 } }, grid: { display: false } },
+        x: {
+          ticks: { color: c.text, font: { weight: "bold", size: 10 } },
+          grid: { display: false },
+        },
         y: {
           beginAtZero: true,
           ticks: {
             color: c.text,
             font: { size: 10 },
-            callback: (val: any) => "Rp" + (val >= 1000 ? val / 1000 + "k" : val),
+            callback: (val: any) => "Rp " + (val >= 1000 ? val / 1000 + "k" : val),
           },
           grid: { color: c.grid, drawTicks: false, borderDash: [5, 5] },
         },
@@ -109,7 +95,7 @@ function draw() {
 }
 
 watch(
-  () => [props.sales, props.purchases],
+  () => props.points,
   async () => {
     await nextTick();
     draw();
@@ -133,8 +119,8 @@ onBeforeUnmount(() => {
   <div class="p-8 h-80 flex flex-col">
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h3 class="text-xs font-black text-muted uppercase tracking-widest mb-2">Financial Flow</h3>
-        <h2 class="text-2xl font-black text-foreground uppercase tracking-tight">Revenue vs Stok</h2>
+        <h3 class="text-xs font-black text-muted uppercase tracking-widest mb-2">Efficiency Analysis</h3>
+        <h2 class="text-2xl font-black text-foreground uppercase tracking-tight">{{ title || "Analisis Laba" }}</h2>
       </div>
       <div class="w-10 h-10 flex items-center justify-center bg-accent/10 text-accent rounded-xl shadow-glass">
         <svg
@@ -147,8 +133,7 @@ onBeforeUnmount(() => {
           stroke-linejoin="round"
         >
           <path d="M3 3v18h18" />
-          <path d="M7 14l4-4 3 3 4-6" />
-          <path d="M7 18h9" />
+          <path d="M7 15l4-4 3 2 4-6" />
         </svg>
       </div>
     </div>

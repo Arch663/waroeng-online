@@ -9,6 +9,14 @@ export interface DashboardStats {
   transaksiMonth: number;
   purchasesToday?: number;
   purchasesMonth?: number;
+  profitToday?: number;
+  profitMonth?: number;
+}
+
+export interface ProfitPoint {
+  day?: string;
+  month?: string;
+  profit: number;
 }
 
 export interface LowStockItem {
@@ -35,6 +43,7 @@ export interface SalesPoint {
   day?: string;
   month?: string;
   revenue: number;
+  count?: number;
 }
 
 export interface PurchasePoint {
@@ -63,6 +72,8 @@ export interface DashboardSummary {
   };
   weeklyPurchases?: PurchasePoint[];
   monthlyPurchases?: PurchasePoint[];
+  weeklyProfit: ProfitPoint[];
+  monthlyProfit: ProfitPoint[];
 }
 
 export interface ReportSummary {
@@ -120,6 +131,5 @@ export async function getReportsSummary(
     const text = await res.text();
     throw new Error(text || `Request failed with status ${res.status}`);
   }
-
   return (await res.json()) as ReportSummary;
 }

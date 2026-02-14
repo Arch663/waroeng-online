@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { InventoryItem } from "@/services/inventoryApi";
 
 defineProps<{
@@ -30,10 +30,10 @@ function handleSort(column: string) {
                 <div class="flex items-center gap-1">
                   SKU
                   <span
-                    class="text-[10px] opacity-0 group-hover/h:opacity-100 transition-opacity"
+                    class="text-xs opacity-0 group-hover/h:opacity-100 transition-opacity"
                     :class="sortBy === 'sku' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "sku" && order === "ASC" ? "▲" : "▼" }}
+                    {{ sortBy === "sku" && order === "ASC" ? "â–²" : "â–¼" }}
                   </span>
                 </div>
               </th>
@@ -44,10 +44,10 @@ function handleSort(column: string) {
                 <div class="flex items-center gap-1">
                   Nama Barang
                   <span
-                    class="text-[10px] opacity-0 group-hover/h:opacity-100 transition-opacity"
+                    class="text-xs opacity-0 group-hover/h:opacity-100 transition-opacity"
                     :class="sortBy === 'name' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "name" && order === "ASC" ? "▲" : "▼" }}
+                    {{ sortBy === "name" && order === "ASC" ? "â–²" : "â–¼" }}
                   </span>
                 </div>
               </th>
@@ -60,10 +60,10 @@ function handleSort(column: string) {
                 >
                   Harga
                   <span
-                    class="text-[10px] opacity-0 group-hover/h:opacity-100 transition-opacity"
+                    class="text-xs opacity-0 group-hover/h:opacity-100 transition-opacity"
                     :class="sortBy === 'price' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "price" && order === "ASC" ? "▲" : "▼" }}
+                    {{ sortBy === "price" && order === "ASC" ? "â–²" : "â–¼" }}
                   </span>
                 </div>
               </th>
@@ -74,10 +74,10 @@ function handleSort(column: string) {
                 <div class="flex items-center gap-1">
                   Stok
                   <span
-                    class="text-[10px] opacity-0 group-hover/h:opacity-100 transition-opacity"
+                    class="text-xs opacity-0 group-hover/h:opacity-100 transition-opacity"
                     :class="sortBy === 'stock' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "stock" && order === "ASC" ? "▲" : "▼" }}
+                    {{ sortBy === "stock" && order === "ASC" ? "â–²" : "â–¼" }}
                   </span>
                 </div>
               </th>
@@ -88,12 +88,12 @@ function handleSort(column: string) {
                 <div class="flex items-center gap-1">
                   Kategori
                   <span
-                    class="text-[10px] opacity-0 group-hover/h:opacity-100 transition-opacity"
+                    class="text-xs opacity-0 group-hover/h:opacity-100 transition-opacity"
                     :class="
                       sortBy === 'category' ? 'opacity-100 text-accent' : ''
                     "
                   >
-                    {{ sortBy === "category" && order === "ASC" ? "▲" : "▼" }}
+                    {{ sortBy === "category" && order === "ASC" ? "â–²" : "â–¼" }}
                   </span>
                 </div>
               </th>
@@ -149,7 +149,7 @@ function handleSort(column: string) {
                 <div class="flex justify-end gap-2">
                   <button
                     @click="$emit('history', item)"
-                    class="p-2 md:px-3 md:py-1.5 text-xs bg-muted/10 text-foreground border border-border rounded-xl hover:bg-muted/20 transition-all"
+                    class="p-2 text-foreground hover:bg-muted/10 rounded-xl transition-all text-xs font-semibold"
                     title="Riwayat Stok"
                   >
                     <span class="hidden md:inline">Riwayat</span>
@@ -170,7 +170,7 @@ function handleSort(column: string) {
 
                   <button
                     @click="$emit('edit', item)"
-                    class="p-2 md:px-3 md:py-1.5 text-xs bg-accent text-white rounded-xl hover:bg-accent/90 transition-all shadow-sm"
+                    class="p-2 text-accent hover:bg-accent/10 rounded-xl transition-all text-xs font-semibold"
                     title="Edit"
                   >
                     <span class="hidden md:inline">Edit</span>
@@ -191,7 +191,7 @@ function handleSort(column: string) {
 
                   <button
                     @click="$emit('delete', item.id)"
-                    class="p-2 md:px-3 md:py-1.5 text-xs border border-red-500/20 text-red-500 rounded-xl hover:bg-red-500/10 transition-all"
+                    class="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all text-xs font-semibold"
                     title="Hapus"
                   >
                     <span class="hidden md:inline">Hapus</span>
@@ -218,3 +218,4 @@ function handleSort(column: string) {
     </div>
   </div>
 </template>
+

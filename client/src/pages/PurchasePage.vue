@@ -8,6 +8,7 @@ import {
 } from "@/services/purchaseApi";
 import { getSuppliers, type Supplier } from "@/services/supplierApi";
 import { getInventoryItems, type InventoryItem } from "@/services/inventoryApi";
+import PageTitle from "@/components/ui/PageTitle.vue";
 
 const purchases = ref<Purchase[]>([]);
 const suppliers = ref<Supplier[]>([]);
@@ -70,23 +71,21 @@ onMounted(loadData);
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div
-      class="flex flex-col md:flex-row md:items-center justify-between gap-4"
+  <div class="space-y-10 pb-12 px-2 md:px-0">
+    <PageTitle
+      title="Log"
+      highlight="Pembelian"
+      subtitle="Log_entry: stock acquisition protocol"
     >
-      <div>
-        <h1 class="text-2xl md:text-3xl font-bold text-foreground">
-          Pembelian
-        </h1>
-        <p class="text-muted">Catat pembelian barang dari supplier</p>
-      </div>
-      <button
-        @click="handleAdd"
-        class="px-6 py-3 bg-accent text-white rounded-2xl font-bold shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-      >
-        + Catat Pembelian
-      </button>
-    </div>
+      <template #action>
+        <button
+          @click="handleAdd"
+          class="px-8 py-4 bg-accent text-background rounded-2xl font-black uppercase tracking-widest shadow-glass hover:shadow-accent/40 hover:-translate-y-1 transition-all active:scale-95 text-xs"
+        >
+          + Acquire New Units
+        </button>
+      </template>
+    </PageTitle>
 
     <div v-if="loading" class="text-center py-12 text-muted">
       Memuat data...
@@ -120,7 +119,7 @@ onMounted(loadData);
                 <div class="text-sm font-bold text-foreground">
                   {{ new Date(p.purchase_date).toLocaleDateString() }}
                 </div>
-                <div class="text-[10px] text-muted">
+                <div class="text-xs text-muted">
                   {{
                     new Date(p.purchase_date).toLocaleTimeString([], {
                       hour: "2-digit",
@@ -176,16 +175,17 @@ onMounted(loadData);
       @click.self="showForm = false"
     >
       <div
-        class="bg-surface rounded-3xl shadow-2xl w-full max-w-lg p-8 border border-border"
+        class="bg-surface rounded-3xl shadow-2xl w-full max-w-lg p-8 border border-border flex flex-col max-h-dvh"
       >
-        <h2 class="text-2xl font-bold mb-6">Catat Pembelian Baru</h2>
-        <form @submit.prevent="handleSave" class="space-y-5">
+        <div class="overflow-y-auto overflow-x-hidden pr-1 space-y-5 scrollbar-thin scrollbar-thumb-accent/40 scrollbar-track-transparent">
+          <h2 class="text-2xl font-bold mb-1">Catat Pembelian Baru</h2>
+          <form @submit.prevent="handleSave" class="space-y-5">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-2">
               <label class="text-sm font-medium text-muted">Produk *</label>
               <select
                 v-model="form.inventory_id"
-                class="w-full px-4 py-3 bg-background border border-border rounded-2xl outline-none focus:ring-2 focus:ring-accent"
+                class="purchase-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
                 required
               >
                 <option :value="0" disabled>Pilih Produk</option>
@@ -198,7 +198,7 @@ onMounted(loadData);
               <label class="text-sm font-medium text-muted">Supplier *</label>
               <select
                 v-model="form.supplier_id"
-                class="w-full px-4 py-3 bg-background border border-border rounded-2xl outline-none focus:ring-2 focus:ring-accent"
+                class="purchase-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
                 required
               >
                 <option :value="0" disabled>Pilih Supplier</option>
@@ -216,7 +216,7 @@ onMounted(loadData);
                 v-model.number="form.quantity"
                 type="number"
                 min="1"
-                class="w-full px-4 py-3 bg-background border border-border rounded-2xl outline-none focus:ring-2 focus:ring-accent"
+                class="purchase-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
                 required
               />
             </div>
@@ -228,7 +228,7 @@ onMounted(loadData);
                 v-model.number="form.cost_price"
                 type="number"
                 min="0"
-                class="w-full px-4 py-3 bg-background border border-border rounded-2xl outline-none focus:ring-2 focus:ring-accent"
+                class="purchase-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
                 required
               />
             </div>
@@ -238,7 +238,7 @@ onMounted(loadData);
             <label class="text-sm font-medium text-muted">Catatan</label>
             <textarea
               v-model="form.notes"
-              class="w-full px-4 py-3 bg-background border border-border rounded-2xl outline-none focus:ring-2 focus:ring-accent h-20 resize-none"
+              class="purchase-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset h-20 resize-none placeholder:text-muted/60"
               placeholder="Contoh: Pembelian stok Sembako bulanan"
             ></textarea>
           </div>
@@ -276,8 +276,31 @@ onMounted(loadData);
               Simpan Pembelian
             </button>
           </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.purchase-field {
+  background-color: var(--surface) !important;
+  color: var(--foreground);
+}
+
+.purchase-field:focus {
+  background-color: var(--surface) !important;
+}
+
+.purchase-field:-webkit-autofill,
+.purchase-field:-webkit-autofill:hover,
+.purchase-field:-webkit-autofill:focus,
+.purchase-field:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+</style>
+

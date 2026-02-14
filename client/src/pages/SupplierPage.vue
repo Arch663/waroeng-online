@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, ref } from "vue";
 import {
   getSuppliers,
@@ -9,6 +9,7 @@ import {
 } from "@/services/supplierApi";
 import ConfirmModal from "@/components/ui/ConfirmModal.vue";
 import Skeleton from "@/components/ui/Skeleton.vue";
+import PageTitle from "@/components/ui/PageTitle.vue";
 
 const suppliers = ref<Supplier[]>([]);
 const loading = ref(false);
@@ -103,21 +104,21 @@ onMounted(loadSuppliers);
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div
-      class="flex flex-col md:flex-row md:items-center justify-between gap-4"
+  <div class="space-y-10 pb-12 px-2 md:px-0">
+    <PageTitle
+      title="Basis"
+      highlight="Supplier"
+      subtitle="Station: external resource network"
     >
-      <div>
-        <h1 class="text-2xl md:text-3xl font-bold text-foreground">Supplier</h1>
-        <p class="text-muted">Kelola data pemasok barang</p>
-      </div>
-      <button
-        @click="handleAdd"
-        class="px-6 py-3 bg-accent text-white rounded-2xl font-bold shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-      >
-        + Tambah Supplier
-      </button>
-    </div>
+      <template #action>
+        <button
+          @click="handleAdd"
+          class="px-8 py-4 bg-accent text-background rounded-2xl font-black uppercase tracking-widest shadow-glass hover:shadow-accent/40 hover:-translate-y-1 transition-all active:scale-95 text-xs"
+        >
+          + Register New Supplier
+        </button>
+      </template>
+    </PageTitle>
 
     <div
       v-if="loading && suppliers.length === 0"
@@ -144,7 +145,7 @@ onMounted(loadSuppliers);
       <div class="overflow-x-auto">
         <table class="w-full text-left">
           <thead
-            class="bg-muted/10 text-[10px] uppercase tracking-widest font-black text-muted"
+            class="bg-muted/10 text-xs uppercase tracking-widest font-black text-muted"
           >
             <tr>
               <th
@@ -157,7 +158,7 @@ onMounted(loadSuppliers);
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
                     :class="sortBy === 'name' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "name" && order === "ASC" ? "▲" : "▼" }}
+                    {{ sortBy === "name" && order === "ASC" ? "â–²" : "â–¼" }}
                   </span>
                 </div>
               </th>
@@ -176,7 +177,7 @@ onMounted(loadSuppliers);
                     "
                   >
                     {{
-                      sortBy === "contact_person" && order === "ASC" ? "▲" : "▼"
+                      sortBy === "contact_person" && order === "ASC" ? "â–²" : "â–¼"
                     }}
                   </span>
                 </div>
@@ -191,7 +192,7 @@ onMounted(loadSuppliers);
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
                     :class="sortBy === 'phone' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "phone" && order === "ASC" ? "▲" : "▼" }}
+                    {{ sortBy === "phone" && order === "ASC" ? "â–²" : "â–¼" }}
                   </span>
                 </div>
               </th>
@@ -207,7 +208,7 @@ onMounted(loadSuppliers);
                       sortBy === 'address' ? 'opacity-100 text-accent' : ''
                     "
                   >
-                    {{ sortBy === "address" && order === "ASC" ? "▲" : "▼" }}
+                    {{ sortBy === "address" && order === "ASC" ? "â–²" : "â–¼" }}
                   </span>
                 </div>
               </th>
@@ -263,12 +264,13 @@ onMounted(loadSuppliers);
       @click.self="showForm = false"
     >
       <div
-        class="bg-surface rounded-3xl shadow-2xl w-full max-w-md p-8 border border-border"
+        class="bg-surface rounded-3xl shadow-2xl w-full max-w-md p-8 border border-border flex flex-col max-h-dvh"
       >
-        <h2 class="text-2xl font-bold mb-6">
-          {{ selectedSupplier ? "Edit" : "Tambah" }} Supplier
-        </h2>
-        <form @submit.prevent="handleSave" class="space-y-4">
+        <div class="overflow-y-auto overflow-x-hidden pr-1 space-y-5 scrollbar-thin scrollbar-thumb-accent/40 scrollbar-track-transparent">
+          <h2 class="text-2xl font-bold mb-1">
+            {{ selectedSupplier ? "Edit" : "Tambah" }} Supplier
+          </h2>
+          <form @submit.prevent="handleSave" class="space-y-4">
           <div class="space-y-2">
             <label class="text-sm font-medium text-muted"
               >Nama Supplier *</label
@@ -276,7 +278,7 @@ onMounted(loadSuppliers);
             <input
               v-model="form.name"
               type="text"
-              class="w-full px-4 py-3 bg-background border border-border rounded-2xl outline-none focus:ring-2 focus:ring-accent"
+              class="supplier-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset placeholder:text-muted/60"
               required
             />
           </div>
@@ -287,7 +289,7 @@ onMounted(loadSuppliers);
             <input
               v-model="form.contact_person"
               type="text"
-              class="w-full px-4 py-3 bg-background border border-border rounded-2xl outline-none focus:ring-2 focus:ring-accent"
+              class="supplier-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset placeholder:text-muted/60"
             />
           </div>
           <div class="space-y-2">
@@ -295,14 +297,14 @@ onMounted(loadSuppliers);
             <input
               v-model="form.phone"
               type="text"
-              class="w-full px-4 py-3 bg-background border border-border rounded-2xl outline-none focus:ring-2 focus:ring-accent"
+              class="supplier-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset placeholder:text-muted/60"
             />
           </div>
           <div class="space-y-2">
             <label class="text-sm font-medium text-muted">Alamat</label>
             <textarea
               v-model="form.address"
-              class="w-full px-4 py-3 bg-background border border-border rounded-2xl outline-none focus:ring-2 focus:ring-accent h-24 resize-none"
+              class="supplier-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset h-24 resize-none placeholder:text-muted/60"
             ></textarea>
           </div>
           <div class="pt-4 flex gap-3">
@@ -320,7 +322,8 @@ onMounted(loadSuppliers);
               Simpan
             </button>
           </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
 
@@ -335,3 +338,25 @@ onMounted(loadSuppliers);
     />
   </div>
 </template>
+
+<style scoped>
+.supplier-field {
+  background-color: var(--surface) !important;
+  color: var(--foreground);
+}
+
+.supplier-field:focus {
+  background-color: var(--surface) !important;
+}
+
+.supplier-field:-webkit-autofill,
+.supplier-field:-webkit-autofill:hover,
+.supplier-field:-webkit-autofill:focus,
+.supplier-field:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+</style>
+

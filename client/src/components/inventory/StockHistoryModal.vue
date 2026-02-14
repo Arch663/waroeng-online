@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, watch } from "vue";
 import { DATABASE_API_URL } from "@/config/api";
 
@@ -71,7 +71,7 @@ function formatType(type: string) {
     @click.self="emit('update:open', false)"
   >
     <div
-      class="bg-surface text-foreground rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[85vh] overflow-hidden border border-border"
+      class="bg-surface text-foreground rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col max-h-dvh overflow-hidden border border-border"
     >
       <div
         class="p-6 border-b border-border flex justify-between items-center bg-muted/5"
@@ -112,7 +112,7 @@ function formatType(type: string) {
           v-else-if="movements.length === 0"
           class="p-12 text-center text-muted"
         >
-          <p class="text-5xl mb-4">📜</p>
+          <p class="text-5xl mb-4">ðŸ“œ</p>
           <p>Belum ada riwayat pergerakan stok untuk barang ini.</p>
         </div>
 
@@ -157,7 +157,7 @@ function formatType(type: string) {
                   {{ formatType(m.movement_type).label }}
                 </span>
                 <div
-                  class="text-[10px] text-muted mt-1 truncate max-w-30]"
+                  class="text-xs text-muted mt-1 truncate max-w-30]"
                   :title="m.notes"
                 >
                   {{ m.notes }}
@@ -195,3 +195,4 @@ function formatType(type: string) {
     </div>
   </div>
 </template>
+

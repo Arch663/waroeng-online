@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 import type { InventoryItem, InventoryPayload } from "@/services/inventoryApi";
 import { getCategories, type Category } from "@/services/categoryApi";
@@ -72,7 +72,6 @@ function handleFileUpload(event: Event) {
   const file = target.files?.[0];
   if (!file) return;
 
-  // Validate size (max 2MB for performance/DB consideration)
   if (file.size > 2 * 1024 * 1024) {
     alert("Ukuran gambar terlalu besar (Maks 2MB)");
     return;
@@ -107,88 +106,125 @@ onMounted(() => {
     class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
     @click.self="emit('update:open', false)"
   >
-    <div
-      class="bg-surface text-foreground rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]"
-    >
-      <div class="p-6 overflow-y-auto space-y-4">
-        <h2 class="font-semibold text-xl border-b border-border pb-2">
+    <div class="bg-surface rounded-3xl shadow-2xl w-full max-w-md p-8 border border-border flex flex-col max-h-dvh">
+      <div class="overflow-y-auto overflow-x-hidden pr-1 space-y-5 scrollbar-thin scrollbar-thumb-accent/40 scrollbar-track-transparent">
+        <h2 class="text-2xl font-bold mb-1">
           {{ item ? "Edit" : "Tambah" }} Barang
         </h2>
 
-        <label for="sku">SKU</label>
-        <input
-          id="sku"
-          v-model="form.sku"
-          placeholder="Contoh: BRG-001"
-          class="w-full border border-border rounded-lg px-3 py-2"
-        />
+        <div class="space-y-2">
+          <label for="sku" class="text-sm font-medium text-muted">SKU</label>
+          <input
+            id="sku"
+            v-model="form.sku"
+            placeholder="Contoh: BRG-001"
+            class="inventory-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset placeholder:text-muted/60"
+          />
+        </div>
 
-        <label for="name">Nama Barang</label>
-        <input
-          id="name"
-          v-model="form.name"
-          placeholder="Input nama barang"
-          class="w-full border border-border rounded-lg px-3 py-2"
-        />
+        <div class="space-y-2">
+          <label for="name" class="text-sm font-medium text-muted">Nama Barang *</label>
+          <input
+            id="name"
+            v-model="form.name"
+            placeholder="Input nama barang"
+            class="inventory-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset placeholder:text-muted/60"
+          />
+        </div>
 
-        <label for="price">Harga</label>
-        <input
-          id="price"
-          v-model.number="form.price"
-          type="number"
-          min="0"
-          placeholder="Input harga barang"
-          class="w-full border border-border rounded-lg px-3 py-2"
-        />
-
-        <label for="stock">Jumlah Stok</label>
-        <input
-          id="stock"
-          v-model.number="form.stock"
-          type="number"
-          min="0"
-          placeholder="Input stok barang"
-          class="w-full border border-border rounded-lg px-3 py-2"
-        />
-
-        <label for="category">Kategori</label>
-        <select
-          id="category"
-          v-model.number="form.category_id"
-          class="w-full border border-border rounded-lg px-3 py-2 bg-background"
-        >
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-            {{ cat.name }}
-          </option>
-        </select>
-
-        <label for="image">Gambar Produk</label>
-        <div class="space-y-3">
-          <!-- Preview -->
-          <div
-            v-if="form.image"
-            class="relative w-32 h-32 rounded-xl overflow-hidden border border-border bg-muted/20"
-          >
-            <img :src="form.image" class="w-full h-full object-contain" />
-            <button
-              @click="form.image = ''"
-              class="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full text-xs shadow-lg"
-              type="button"
-            >
-              ✕
-            </button>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label for="price" class="text-sm font-medium text-muted">Harga *</label>
+            <input
+              id="price"
+              v-model.number="form.price"
+              type="number"
+              min="0"
+              placeholder="Input harga barang"
+              class="inventory-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset placeholder:text-muted/60"
+            />
           </div>
 
-          <!-- Upload Toggle -->
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center gap-2">
-              <label
-                class="flex-1 cursor-pointer bg-muted/10 hover:bg-muted/20 border border-border border-dashed rounded-xl py-6 flex flex-col items-center gap-2 transition-all"
+          <div class="space-y-2">
+            <label for="stock" class="text-sm font-medium text-muted">Jumlah Stok *</label>
+            <input
+              id="stock"
+              v-model.number="form.stock"
+              type="number"
+              min="0"
+              placeholder="Input stok barang"
+              class="inventory-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset placeholder:text-muted/60"
+            />
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label for="category" class="text-sm font-medium text-muted">Kategori *</label>
+          <select
+            id="category"
+            v-model.number="form.category_id"
+            class="inventory-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset text-foreground"
+          >
+            <option :value="undefined" disabled>Pilih Kategori</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+              {{ cat.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="space-y-2">
+          <label for="image" class="text-sm font-medium text-muted">Gambar Produk</label>
+          <div class="space-y-3">
+            <div
+              v-if="form.image"
+              class="relative w-32 h-32 rounded-xl overflow-hidden border border-border bg-muted/20"
+            >
+              <img :src="form.image" class="w-full h-full object-contain" />
+              <button
+                @click="form.image = ''"
+                class="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full text-xs shadow-lg"
+                type="button"
               >
-                <span class="text-2xl">📸</span>
-                <span class="text-xs font-medium text-muted"
-                  >Upload dari Local</span
+                ×
+              </button>
+            </div>
+
+            <div v-if="!form.image" class="flex flex-col gap-2">
+              <div class="flex items-center gap-2">
+                <label
+                  class="flex-1 cursor-pointer bg-muted/10 hover:bg-muted/20 border border-border border-dashed rounded-xl py-6 flex flex-col items-center gap-2 transition-all"
                 >
+                  <svg class="w-7 h-7 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 7a2 2 0 012-2h3l2-2h4l2 2h3a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                    <circle cx="12" cy="13" r="3" />
+                  </svg>
+                  <span class="text-xs font-medium text-muted">Upload dari Local</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    class="hidden"
+                    @change="handleFileUpload"
+                  />
+                </label>
+              </div>
+
+              <div class="relative flex items-center gap-2">
+                <div class="h-px bg-border grow"></div>
+                <span class="text-xs text-muted font-bold uppercase tracking-widest">atau</span>
+                <div class="h-px bg-border grow"></div>
+              </div>
+
+              <input
+                id="image"
+                v-model="form.image"
+                placeholder="Masukan URL Gambar (https://...)"
+                class="inventory-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset text-sm placeholder:text-muted/60"
+              />
+            </div>
+
+            <div v-else class="flex gap-2">
+              <label class="flex-1 cursor-pointer text-center px-3 py-2 bg-muted/10 hover:bg-muted/20 border border-border rounded-xl text-xs font-semibold text-foreground transition-all">
+                Ganti dari Local
                 <input
                   type="file"
                   accept="image/*"
@@ -196,31 +232,22 @@ onMounted(() => {
                   @change="handleFileUpload"
                 />
               </label>
-            </div>
-
-            <div class="relative flex items-center gap-2">
-              <div class="h-px bg-border grow"></div>
-              <span
-                class="text-[10px] text-muted font-bold uppercase tracking-widest"
-                >atau</span
+              <button
+                type="button"
+                class="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl text-xs font-semibold text-red-500 transition-all"
+                @click="form.image = ''"
               >
-              <div class="h-px bg-border grow"></div>
+                Hapus
+              </button>
             </div>
-
-            <input
-              id="image"
-              v-model="form.image"
-              placeholder="Masukan URL Gambar (https://...)"
-              class="w-full border border-border rounded-lg px-3 py-2 text-sm"
-            />
           </div>
         </div>
 
-        <div class="flex justify-end gap-2">
+        <div class="pt-2 flex gap-3">
           <button
             :disabled="loading"
             @click="emit('update:open', false)"
-            class="px-4 py-2 border rounded-lg disabled:opacity-50"
+            class="flex-1 py-3 bg-muted/10 text-foreground rounded-2xl font-bold disabled:opacity-50"
           >
             Batal
           </button>
@@ -228,7 +255,7 @@ onMounted(() => {
           <button
             :disabled="loading"
             @click="submit"
-            class="px-4 py-2 bg-accent text-white rounded-lg disabled:opacity-50"
+            class="flex-1 py-3 bg-accent text-white rounded-2xl font-bold shadow-lg shadow-accent/20 disabled:opacity-50"
           >
             {{ loading ? "Menyimpan..." : "Simpan" }}
           </button>
@@ -237,3 +264,26 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.inventory-field {
+  background-color: var(--surface) !important;
+  color: var(--foreground);
+}
+
+.inventory-field:focus {
+  background-color: var(--surface) !important;
+}
+
+.inventory-field:-webkit-autofill,
+.inventory-field:-webkit-autofill:hover,
+.inventory-field:-webkit-autofill:focus,
+.inventory-field:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+</style>
+
+

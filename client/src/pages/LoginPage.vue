@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -48,52 +48,52 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-background p-4">
-    <div class="w-full max-w-md">
+  <div class="min-h-screen flex items-center justify-center bg-background p-6 font-sans">
+    <div class="w-full max-w-lg">
       <div
-        class="bg-surface border border-border rounded-3xl p-8 shadow-2xl relative overflow-hidden group"
+        class="bg-surface/30 backdrop-blur-3xl border border-glass-border rounded-4xl p-12 shadow-glass relative overflow-hidden group"
       >
-        <div
-          class="absolute -top-24 -right-24 w-48 h-48 bg-accent/10 rounded-full blur-3xl transition-transform group-hover:scale-110"
-        />
-        <div
-          class="absolute -bottom-24 -left-24 w-48 h-48 bg-accent/10 rounded-full blur-3xl transition-transform group-hover:scale-110"
-        />
-
+        <!-- Decorative Elements -->
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-50" />
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-50" />
+        
         <div class="relative z-10">
-          <div class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-foreground mb-2">
-              Waroeng Online
-            </h1>
-            <p class="text-muted">Gunakan akun Anda untuk masuk</p>
+          <div class="mb-12 text-center">
+             <div class="inline-flex items-center justify-center w-20 h-20 bg-accent rounded-3xl text-background text-4xl font-black shadow-glass mb-8 animate-pulse">
+                W
+             </div>
+             <h1 class="text-4xl font-black text-foreground tracking-tighter uppercase mb-3">
+               Access <span class="text-accent">Protocol</span>
+             </h1>
+             <p class="text-xs font-black text-muted tracking-widest uppercase opacity-50 italic">AUTHENTICATION_GATEWAY_V1.0</p>
           </div>
 
-          <form @submit.prevent="handleLogin" class="space-y-5">
+          <form @submit.prevent="handleLogin" class="space-y-8">
             <div
               v-if="error"
-              class="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm text-center"
+              class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs font-bold text-center uppercase tracking-widest animate-shake"
             >
               {{ error }}
             </div>
 
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-muted">Username</label>
+            <div class="space-y-3">
+              <label class="text-xs font-black text-muted uppercase tracking-widest ml-2">Unit Identifier</label>
               <input
                 v-model="username"
                 type="text"
-                placeholder="Masukkan username"
-                class="w-full px-4 py-3 bg-background border border-border rounded-2xl focus:ring-2 focus:ring-accent outline-none transition-all"
+                placeholder="ENTER USERNAME..."
+                class="w-full px-8 py-5 bg-background/50 border border-border/50 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all placeholder:text-muted/20 placeholder:font-black placeholder:text-xs font-bold text-foreground"
                 required
               />
             </div>
 
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-muted">Passsword</label>
+            <div class="space-y-3">
+              <label class="text-xs font-black text-muted uppercase tracking-widest ml-2">Security Key</label>
               <input
                 v-model="password"
                 type="password"
-                placeholder="••••••••"
-                class="w-full px-4 py-3 bg-background border border-border rounded-2xl focus:ring-2 focus:ring-accent outline-none transition-all"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                class="w-full px-8 py-5 bg-background/50 border border-border/50 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all placeholder:text-muted/20 font-bold text-foreground"
                 required
               />
             </div>
@@ -101,15 +101,15 @@ async function handleLogin() {
             <button
               type="submit"
               :disabled="loading"
-              class="w-full py-4 bg-accent text-white rounded-2xl font-bold shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 transition-all text-lg"
+              class="w-full py-6 bg-accent text-background rounded-2xl font-black uppercase tracking-widest shadow-glass hover:shadow-accent/40 active:scale-95 disabled:opacity-50 transition-all text-sm mt-4"
             >
-              {{ loading ? "Masuk..." : "Masuk Sekarang" }}
+              {{ loading ? "Initiating..." : "Connect Link" }}
             </button>
           </form>
 
-          <div class="mt-8 pt-6 border-t border-border/50 text-center">
-            <p class="text-xs text-muted/60">
-              © 2026 Arch663 Waroeng System. All rights reserved.
+          <div class="mt-12 pt-8 border-t border-glass-border text-center">
+            <p class="text-xs font-black text-muted/40 uppercase tracking-widest">
+              NERV_HQ // ARCH663_WAROENG_OS Â© 2026
             </p>
           </div>
         </div>
@@ -117,3 +117,16 @@ async function handleLogin() {
     </div>
   </div>
 </template>
+
+<style scoped>
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+.animate-shake {
+  animation: shake 0.2s ease-in-out infinite;
+}
+</style>
+
+

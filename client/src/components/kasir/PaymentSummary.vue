@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { useCartStore } from "@/stores/useCartStore";
 
@@ -136,7 +136,7 @@ watch(
     </div>
 
     <button
-      class="w-full mt-6 bg-accent disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-accent/20 hover:bg-accent/90 transition-all active:scale-[0.98]"
+      class="w-full mt-6 bg-accent disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-accent/20 hover:bg-accent/90 transition-all active:scale-95"
       :disabled="loading || !canCheckout"
       @click="handleCheckout"
     >
@@ -145,3 +145,4 @@ watch(
     </button>
   </div>
 </template>
+

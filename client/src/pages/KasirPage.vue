@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import CardStat from "@/components/ui/CardStat.vue";
@@ -8,8 +8,7 @@ import OrderList from "@/components/kasir/OrderList.vue";
 import PaymentSummary from "@/components/kasir/PaymentSummary.vue";
 import Pagination from "@/components/ui/Pagination.vue";
 import Skeleton from "@/components/ui/Skeleton.vue";
-import moneyIcon from "@/assets/money.svg";
-import profitIcon from "@/assets/profit.svg";
+import PageTitle from "@/components/ui/PageTitle.vue";
 import { useCartStore } from "@/stores/useCartStore";
 import type { Product } from "@/types/product";
 import {
@@ -44,6 +43,10 @@ const categories = computed(() => {
 });
 
 const availableProducts = computed(() => meta.value.totalItems);
+const cartItemCount = computed(() => cart.totalQty);
+const lowStockOnPage = computed(
+  () => products.value.filter((item) => item.stock <= 10).length,
+);
 
 async function loadInventory(page = 1) {
   loading.value = true;
@@ -169,42 +172,47 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-6 pb-12">
-    <div class="pt-3 space-y-4">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl md:text-3xl font-bold text-foreground">Kasir</h1>
-        <button
-          @click="showCartMobile = !showCartMobile"
-          class="lg:hidden relative p-3 bg-accent text-white rounded-xl shadow-lg"
-        >
-          <svg
-            class="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+  <div class="space-y-10 pb-12 px-2 md:px-0">
+    <div class="space-y-8">
+      <PageTitle
+        title="Sistem"
+        highlight="Kasir"
+        subtitle="Interface: point of sale terminal"
+      >
+        <template #action>
+          <button
+            @click="showCartMobile = !showCartMobile"
+            class="lg:hidden relative p-4 bg-accent text-background rounded-2xl shadow-glass active:scale-90 transition-all"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-            />
-          </svg>
-          <span
-            v-if="cart.items.length > 0"
-            class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-surface font-bold"
-          >
-            {{ cart.items.length }}
-          </span>
-        </button>
-      </div>
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+            <span
+              v-if="cart.items.length > 0"
+              class="absolute -top-2 -right-2 bg-foreground text-background text-xs w-6 h-6 flex items-center justify-center rounded-full border-2 border-background font-black"
+            >
+              {{ cart.items.length }}
+            </span>
+          </button>
+        </template>
+      </PageTitle>
 
       <div class="relative group">
         <div
-          class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-muted transition-colors group-focus-within:text-accent"
+          class="absolute inset-y-0 left-5 flex items-center pointer-events-none text-muted transition-colors group-focus-within:text-accent"
         >
           <svg
-            class="w-5 h-5"
+            class="w-5 h-5 opacity-40"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -220,48 +228,55 @@ onMounted(async () => {
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Cari SKU atau nama barang..."
-          class="w-full bg-surface border border-border rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all placeholder:text-muted/60"
+          placeholder="ENTER UNIT CODE OR SCAN BARCODE..."
+          class="w-full bg-surface/30 backdrop-blur-3xl border border-border/50 rounded-2xl py-5 pl-14 pr-6 focus:outline-none focus:ring-4 focus:ring-accent/10 focus:border-accent shadow-glass transition-all placeholder:text-muted/30 placeholder:font-black placeholder:text-xs placeholder:tracking-widest"
         />
       </div>
     </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <CardStat
-        title="Keranjang"
+        title="Nilai Keranjang"
         :value="`Rp ${Number(cart.total).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`"
       >
         <template #icon>
-          <img
-            :src="moneyIcon"
-            class="w-8 h-8 md:w-10 md:h-10"
-            alt="nilai keranjang"
-          />
+          <svg class="w-8 h-8 md:w-10 md:h-10 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 7h20v10H2z" />
+            <path d="M12 10a2 2 0 100 4 2 2 0 000-4z" />
+            <path d="M6 9v6M18 9v6" />
+          </svg>
         </template>
       </CardStat>
       <CardStat
-        title="Produk Ada"
+        title="Item Keranjang"
+        :value="cartItemCount.toLocaleString('id-ID')"
+      >
+        <template #icon>
+          <svg class="w-8 h-8 md:w-10 md:h-10 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
+            <path d="M3 10h18" />
+          </svg>
+        </template>
+      </CardStat>
+      <CardStat
+        title="Produk Tersedia"
         :value="availableProducts.toLocaleString('id-ID')"
       >
         <template #icon>
-          <img
-            :src="profitIcon"
-            class="w-8 h-8 md:w-10 md:h-10"
-            alt="produk tersedia"
-          />
+          <svg class="w-8 h-8 md:w-10 md:h-10 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+          </svg>
         </template>
       </CardStat>
       <CardStat
-        title="Total Items"
-        :value="meta.totalItems.toLocaleString('id-ID')"
-        class="col-span-2 md:col-span-1"
+        title="Stok Kritis"
+        :value="lowStockOnPage.toLocaleString('id-ID')"
       >
         <template #icon>
-          <div
-            class="w-8 h-8 md:w-10 md:h-10 bg-accent rounded-xl flex items-center justify-center text-white font-black"
-          >
-            #
-          </div>
+          <svg class="w-8 h-8 md:w-10 md:h-10 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l10 18H2L12 3z" />
+            <path d="M12 9v5M12 18h.01" />
+          </svg>
         </template>
       </CardStat>
     </div>
@@ -284,7 +299,7 @@ onMounted(async () => {
     <div>
       <div
         v-if="loading"
-        class="flex gap-2 overflow-x-auto pb-4 scrollbar-hide"
+        class="flex gap-2 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-accent/35 scrollbar-track-transparent"
       >
         <Skeleton
           v-for="i in 6"
@@ -322,7 +337,11 @@ onMounted(async () => {
             v-if="products.length === 0"
             class="py-20 text-center text-muted bg-surface/40 backdrop-blur-md rounded-3xl border border-border border-dashed"
           >
-            <p class="text-6xl mb-4 grayscale opacity-30">📦</p>
+            <div class="mx-auto mb-4 w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 text-accent flex items-center justify-center">
+              <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+              </svg>
+            </div>
             <p class="font-bold text-lg">Barang tidak ditemukan</p>
             <p class="text-sm mt-2">
               Coba kata kunci lain atau pilih kategori berbeda.
@@ -344,7 +363,12 @@ onMounted(async () => {
       </div>
     </div>
 
-    <Transition name="slide-up">
+    <Transition
+      enter-active-class="transition-transform duration-300"
+      leave-active-class="transition-transform duration-300"
+      enter-from-class="translate-y-full"
+      leave-to-class="translate-y-full"
+    >
       <div
         v-if="showCartMobile"
         class="fixed inset-0 z-50 lg:hidden flex flex-col bg-background"
@@ -386,14 +410,3 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
-.slide-up-enter-active,
-.slide-up-leave-active {
-  transition: transform 0.3s ease;
-}
-
-.slide-up-enter-from,
-.slide-up-leave-to {
-  transform: translateY(100%);
-}
-</style>
