@@ -13,7 +13,7 @@ const active = defineModel<string>();
       :key="c"
       @click="active = c"
       class="px-4 py-2 rounded-full text-foreground border border-border whitespace-nowrap"
-      :class="active === c ? 'bg-accent/70 text-white' : 'bg-surface'"
+      :class="active === c ? 'bg-accent text-white' : 'bg-surface'"
     >
       {{ c }}
     </button>

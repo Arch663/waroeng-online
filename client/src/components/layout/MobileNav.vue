@@ -3,7 +3,6 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useTheme } from "@/composables/useTheme";
 import { useAuthStore } from "@/stores/useAuthStore";
-import AppLogo from "@/components/ui/AppLogo.vue";
 
 type MenuIcon = "dashboard" | "cashier" | "inventory" | "purchase" | "supplier" | "report";
 
@@ -70,7 +69,17 @@ function handleLogout() {
     <header
       class="h-20 bg-glass-bg backdrop-blur-3xl border-b border-glass-border flex items-center justify-between px-6 sticky top-0 z-40 shadow-soft"
     >
-      <AppLogo subtitle="Mobile Ops" />
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 bg-accent rounded-xl flex items-center justify-center text-background font-black shadow-glass"
+        >
+          W
+        </div>
+        <div class="flex flex-col">
+          <span class="font-black text-foreground tracking-tighter uppercase text-sm leading-none">Waroeng</span>
+          <span class="text-xs font-black text-accent tracking-widest uppercase mt-1">Mobile Ops</span>
+        </div>
+      </div>
       <button
         @click="toggleMenu"
         class="p-3 text-foreground transition-all active:scale-90 bg-surface/50 rounded-xl border border-glass-border"

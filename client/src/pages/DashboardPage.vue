@@ -54,18 +54,6 @@ const maxDailyRevenue = computed(() => {
   return Math.max(...summary.value.dailyMonthSales.map((item) => item.revenue));
 });
 
-const statsForGrid = computed(() => ({
-  ...summary.value.stats,
-  purchasesToday:
-    summary.value.stats.purchasesToday ??
-    summary.value.purchaseStats?.purchasesToday ??
-    0,
-  purchasesMonth:
-    summary.value.stats.purchasesMonth ??
-    summary.value.purchaseStats?.purchasesMonth ??
-    0,
-}));
-
 async function loadSummary() {
   loading.value = true;
   error.value = "";
@@ -123,7 +111,7 @@ onMounted(() => {
     </p>
 
     <!-- Stat Grid -->
-    <StatGrid :stats="statsForGrid" :loading="loading" />
+    <StatGrid :stats="summary.stats" :loading="loading" />
 
     <!-- Main Charts Row -->
     <div class="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3">

@@ -193,7 +193,7 @@ onMounted(loadReport);
       </div>
 
       <div
-        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border shadow-xl border-l-4 border-l-secondary group hover:border-accent/40 transition-all duration-300"
+        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border shadow-xl border-l-4 border-l-accent/60 group hover:border-accent/40 transition-all duration-300"
       >
         <p
           class="text-xs font-black text-muted uppercase tracking-widest mb-2"
@@ -214,7 +214,7 @@ onMounted(loadReport);
       </div>
 
       <div
-        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border shadow-xl border-l-4 border-l-foreground group hover:border-accent/40 transition-all duration-300"
+        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border shadow-xl border-l-4 border-l-foreground/30 group hover:border-accent/30 transition-all duration-300"
       >
         <p
           class="text-xs font-black text-muted uppercase tracking-widest mb-2"
