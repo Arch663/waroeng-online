@@ -261,4 +261,16 @@ export async function initializeDatabase() {
   await seedDatabase(pool);
 }
 
+let initPromise: Promise<void> | null = null;
+
+export function ensureDatabaseInitialized() {
+  if (!initPromise) {
+    initPromise = initializeDatabase().catch((error) => {
+      initPromise = null;
+      throw error;
+    });
+  }
+  return initPromise;
+}
+
 export { pool };
