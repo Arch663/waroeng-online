@@ -17,11 +17,29 @@ export function createRouteHandler(basePath: string, router: Router) {
   app.use(basePath, router);
   app.use(errorHandler);
 
+  const shouldAutoInitDb =
+    process.env.DB_AUTO_INIT === "true" || process.env.NODE_ENV !== "production";
+
   return async function handler(req: any, res: any) {
-    await ensureDatabaseInitialized();
-    if (req.url) {
-      req.url = req.url.replace(/^\/api/, "") || "/";
+    try {
+      if (shouldAutoInitDb) {
+        await ensureDatabaseInitialized();
+      }
+      if (req.url) {
+        req.url = req.url.replace(/^\/api/, "") || "/";
+      }
+      return app(req, res);
+    } catch (error) {
+      console.error("[api] serverless handler failed:", error);
+      if (!res.headersSent) {
+        res.status(500).json({
+          ok: false,
+          message: "Serverless function failed",
+          detail:
+            error instanceof Error ? error.message : "Unexpected server error",
+        });
+      }
+      return;
     }
-    return app(req, res);
   };
 }
