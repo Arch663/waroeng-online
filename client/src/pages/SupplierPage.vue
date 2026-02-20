@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import {
   getSuppliers,
   createSupplier,
@@ -10,6 +10,8 @@ import {
 import ConfirmModal from "@/components/ui/ConfirmModal.vue";
 import Skeleton from "@/components/ui/Skeleton.vue";
 import PageTitle from "@/components/ui/PageTitle.vue";
+import Pagination from "@/components/ui/Pagination.vue";
+import TableCard from "@/components/ui/TableCard.vue";
 
 const suppliers = ref<Supplier[]>([]);
 const loading = ref(false);
@@ -21,6 +23,8 @@ const supplierToDelete = ref<Supplier | null>(null);
 
 const sortBy = ref("name");
 const order = ref<"ASC" | "DESC">("ASC");
+const currentPage = ref(1);
+const pageSize = 10;
 
 const form = ref({
   name: "",
@@ -43,6 +47,19 @@ async function loadSuppliers() {
   }
 }
 
+const totalPages = computed(() => {
+  return Math.max(1, Math.ceil(suppliers.value.length / pageSize));
+});
+
+const paginatedSuppliers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  return suppliers.value.slice(start, start + pageSize);
+});
+
+function handlePageChange(page: number) {
+  currentPage.value = page;
+}
+
 function handleSort(column: string) {
   if (sortBy.value === column) {
     order.value = order.value === "ASC" ? "DESC" : "ASC";
@@ -51,6 +68,7 @@ function handleSort(column: string) {
     order.value = "ASC";
   }
   loadSuppliers();
+  currentPage.value = 1;
 }
 
 function handleAdd() {
@@ -100,6 +118,15 @@ async function confirmDelete() {
   }
 }
 
+watch(
+  () => suppliers.value.length,
+  () => {
+    if (currentPage.value > totalPages.value) {
+      currentPage.value = totalPages.value;
+    }
+  },
+);
+
 onMounted(loadSuppliers);
 </script>
 
@@ -113,7 +140,7 @@ onMounted(loadSuppliers);
       <template #action>
         <button
           @click="handleAdd"
-          class="px-8 py-4 bg-accent text-background rounded-2xl font-black uppercase tracking-widest shadow-glass hover:shadow-accent/40 hover:-translate-y-1 transition-all active:scale-95 text-xs"
+          class="px-8 py-4 bg-accent text-background rounded-2xl font-black uppercase tracking-widest hover:-translate-y-1 transition-all active:scale-95 text-xs"
         >
           + Register New Supplier
         </button>
@@ -122,7 +149,7 @@ onMounted(loadSuppliers);
 
     <div
       v-if="loading && suppliers.length === 0"
-      class="bg-surface/60 backdrop-blur-xl rounded-2xl p-8 border border-border shadow-xl"
+      class="bg-surface/60 backdrop-blur-xl rounded-2xl p-8 border border-border"
     >
       <div class="flex gap-4 mb-6">
         <Skeleton v-for="i in 5" :key="i" height="20px" />
@@ -138,11 +165,8 @@ onMounted(loadSuppliers);
       </div>
     </div>
 
-    <div
-      v-else
-      class="bg-surface/60 backdrop-blur-xl rounded-2xl border border-border overflow-hidden shadow-xl"
-    >
-      <div class="overflow-x-auto">
+    <TableCard v-else>
+      <template #default>
         <table class="w-full text-left">
           <thead
             class="bg-muted/10 text-xs uppercase tracking-widest font-black text-muted"
@@ -158,7 +182,7 @@ onMounted(loadSuppliers);
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
                     :class="sortBy === 'name' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "name" && order === "ASC" ? "â–²" : "â–¼" }}
+                    {{ sortBy === "name" && order === "ASC" ? "↑" : "↓" }}
                   </span>
                 </div>
               </th>
@@ -177,7 +201,9 @@ onMounted(loadSuppliers);
                     "
                   >
                     {{
-                      sortBy === "contact_person" && order === "ASC" ? "â–²" : "â–¼"
+                      sortBy === "contact_person" && order === "ASC"
+                        ? "↑"
+                        : "↓"
                     }}
                   </span>
                 </div>
@@ -192,7 +218,7 @@ onMounted(loadSuppliers);
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
                     :class="sortBy === 'phone' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "phone" && order === "ASC" ? "â–²" : "â–¼" }}
+                    {{ sortBy === "phone" && order === "ASC" ? "↑" : "↓" }}
                   </span>
                 </div>
               </th>
@@ -208,7 +234,9 @@ onMounted(loadSuppliers);
                       sortBy === 'address' ? 'opacity-100 text-accent' : ''
                     "
                   >
-                    {{ sortBy === "address" && order === "ASC" ? "â–²" : "â–¼" }}
+                    {{
+                      sortBy === "address" && order === "ASC" ? "↑" : "↓"
+                    }}
                   </span>
                 </div>
               </th>
@@ -217,7 +245,7 @@ onMounted(loadSuppliers);
           </thead>
           <tbody class="divide-y divide-border">
             <tr
-              v-for="s in suppliers"
+              v-for="s in paginatedSuppliers"
               :key="s.id"
               class="hover:bg-muted/5 transition-colors group"
             >
@@ -250,13 +278,20 @@ onMounted(loadSuppliers);
             </tr>
             <tr v-if="suppliers.length === 0">
               <td colspan="5" class="px-6 py-12 text-center text-muted">
-                Belum ada data supplier.
+                Tidak ada data supplier.
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <Pagination
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          @page-change="handlePageChange"
+        />
+      </template>
+    </TableCard>
 
     <div
       v-if="showForm"
@@ -264,64 +299,66 @@ onMounted(loadSuppliers);
       @click.self="showForm = false"
     >
       <div
-        class="bg-surface rounded-3xl shadow-2xl w-full max-w-md p-8 border border-border flex flex-col max-h-dvh"
+        class="bg-surface rounded-3xl w-full max-w-md p-8 border border-border flex flex-col max-h-dvh"
       >
-        <div class="overflow-y-auto overflow-x-hidden pr-1 space-y-5 scrollbar-thin scrollbar-thumb-accent/40 scrollbar-track-transparent">
+        <div
+          class="overflow-y-auto overflow-x-hidden pr-1 space-y-5 scrollbar-thin scrollbar-thumb-accent/40 scrollbar-track-transparent"
+        >
           <h2 class="text-2xl font-bold mb-1">
             {{ selectedSupplier ? "Edit" : "Tambah" }} Supplier
           </h2>
           <form @submit.prevent="handleSave" class="space-y-4">
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-muted"
-              >Nama Supplier *</label
-            >
-            <input
-              v-model="form.name"
-              type="text"
-              class="supplier-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset placeholder:text-muted/60"
-              required
-            />
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-muted"
-              >Person In Charge</label
-            >
-            <input
-              v-model="form.contact_person"
-              type="text"
-              class="supplier-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset placeholder:text-muted/60"
-            />
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-muted">No. Telepon</label>
-            <input
-              v-model="form.phone"
-              type="text"
-              class="supplier-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset placeholder:text-muted/60"
-            />
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-muted">Alamat</label>
-            <textarea
-              v-model="form.address"
-              class="supplier-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset h-24 resize-none placeholder:text-muted/60"
-            ></textarea>
-          </div>
-          <div class="pt-4 flex gap-3">
-            <button
-              type="button"
-              @click="showForm = false"
-              class="flex-1 py-3 bg-muted/10 text-foreground rounded-2xl font-bold"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              class="flex-1 py-3 bg-accent text-white rounded-2xl font-bold shadow-lg shadow-accent/20"
-            >
-              Simpan
-            </button>
-          </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-muted"
+                >Nama Supplier *</label
+              >
+              <input
+                v-model="form.name"
+                type="text"
+                class="supplier-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset placeholder:text-muted/60"
+                required
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-muted"
+                >Person In Charge</label
+              >
+              <input
+                v-model="form.contact_person"
+                type="text"
+                class="supplier-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset placeholder:text-muted/60"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-muted">No. Telepon</label>
+              <input
+                v-model="form.phone"
+                type="text"
+                class="supplier-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset placeholder:text-muted/60"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-muted">Alamat</label>
+              <textarea
+                v-model="form.address"
+                class="supplier-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset h-24 resize-none placeholder:text-muted/60"
+              ></textarea>
+            </div>
+            <div class="pt-4 flex gap-3">
+              <button
+                type="button"
+                @click="showForm = false"
+                class="flex-1 py-3 bg-muted/10 text-foreground rounded-2xl font-bold"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                class="flex-1 py-3 bg-accent text-white rounded-2xl font-bold"
+              >
+                Simpan
+              </button>
+            </div>
           </form>
         </div>
       </div>
@@ -354,9 +391,6 @@ onMounted(loadSuppliers);
 .supplier-field:-webkit-autofill:focus,
 .supplier-field:-webkit-autofill:active {
   -webkit-text-fill-color: var(--foreground);
-  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
-  box-shadow: 0 0 0 1000px var(--surface) inset;
   transition: background-color 9999s ease-in-out 0s;
 }
 </style>
-

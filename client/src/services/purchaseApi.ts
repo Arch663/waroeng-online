@@ -22,11 +22,20 @@ export interface PurchasePayload {
   notes?: string;
 }
 
-export async function getPurchases(): Promise<Purchase[]> {
+export async function getPurchases(params?: {
+  sortBy?: string;
+  order?: "ASC" | "DESC";
+}): Promise<Purchase[]> {
   const token = localStorage.getItem("token");
-  const res = await fetch(`${API_BASE_URL}/purchases`, {
+  const query = new URLSearchParams();
+  if (params?.sortBy) query.append("sortBy", params.sortBy);
+  if (params?.order) query.append("order", params.order);
+  const res = await fetch(
+    `${API_BASE_URL}/purchases${query.toString() ? "?" + query.toString() : ""}`,
+    {
     headers: { Authorization: `Bearer ${token}` },
-  });
+    },
+  );
   if (!res.ok) throw new Error("Gagal memuat data pembelian.");
   return res.json();
 }

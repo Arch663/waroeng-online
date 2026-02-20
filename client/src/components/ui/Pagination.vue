@@ -66,7 +66,7 @@ const pages = computed(() => {
         :class="[
           'w-10 h-10 rounded-xl font-bold transition-all border',
           currentPage === page
-            ? 'bg-accent border-accent text-white shadow-lg shadow-accent/20'
+            ? 'bg-accent border-accent text-white'
             : 'bg-surface border-border text-foreground hover:bg-accent/5 hover:border-accent/40',
         ]"
       >

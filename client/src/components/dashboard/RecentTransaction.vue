@@ -11,7 +11,7 @@ defineProps<{
 
 <template>
   <div
-    class="bg-surface rounded-2xl h-43.5 p-4 shadow-sm overflow-y-auto max-h-65 scrollbar scrollbar-thumb-foreground scrollbar-track-border scrollbar-hover:scrollbar-thumb-surface"
+    class="bg-surface rounded-2xl h-43.5 p-4 overflow-y-auto max-h-65 scrollbar scrollbar-thumb-foreground scrollbar-track-border scrollbar-hover:scrollbar-thumb-surface"
   >
     <h2 class="font-semibold mb-4">Transaksi Terakhir</h2>
 

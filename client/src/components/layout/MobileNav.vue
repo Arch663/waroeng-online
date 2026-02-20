@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useTheme } from "@/composables/useTheme";
 import { useAuthStore } from "@/stores/useAuthStore";
+import AppLogo from "@/components/ui/AppLogo.vue";
 
 type MenuIcon = "dashboard" | "cashier" | "inventory" | "purchase" | "supplier" | "report";
 
@@ -67,19 +68,9 @@ function handleLogout() {
 <template>
   <div>
     <header
-      class="h-20 bg-glass-bg backdrop-blur-3xl border-b border-glass-border flex items-center justify-between px-6 sticky top-0 z-40 shadow-soft"
+      class="h-20 bg-glass-bg backdrop-blur-3xl border-b border-glass-border flex items-center justify-between px-6 sticky top-0 z-40"
     >
-      <div class="flex items-center gap-3">
-        <div
-          class="w-10 h-10 bg-accent rounded-xl flex items-center justify-center text-background font-black shadow-glass"
-        >
-          W
-        </div>
-        <div class="flex flex-col">
-          <span class="font-black text-foreground tracking-tighter uppercase text-sm leading-none">Waroeng</span>
-          <span class="text-xs font-black text-accent tracking-widest uppercase mt-1">Mobile Ops</span>
-        </div>
-      </div>
+      <AppLogo subtitle="Mobile Ops" />
       <button
         @click="toggleMenu"
         class="p-3 text-foreground transition-all active:scale-90 bg-surface/50 rounded-xl border border-glass-border"
@@ -126,14 +117,14 @@ function handleLogout() {
     <Transition name="slide">
       <aside
         v-if="isOpen"
-        class="fixed top-0 right-0 h-full w-4/5 max-w-sm bg-glass-bg backdrop-blur-3xl z-50 shadow-glass flex flex-col p-8 border-l border-glass-border"
+        class="fixed top-0 right-0 h-full w-4/5 max-w-sm bg-glass-bg backdrop-blur-3xl z-50 flex flex-col p-8 border-l border-glass-border"
       >
         <div class="flex justify-between items-center mb-10">
           <div>
             <span class="text-xs text-accent font-black uppercase tracking-widest block mb-2">Navigation</span>
             <span class="text-3xl font-black text-foreground uppercase tracking-tighter">Menu</span>
           </div>
-          <button @click="closeMenu" class="p-3 rounded-2xl bg-surface/50 border border-glass-border text-foreground">
+          <button @click="closeMenu" class="p-3 rounded-2xl bg-surface/50 border text-foreground">
             <svg
               class="w-6 h-6"
               fill="none"
@@ -152,7 +143,7 @@ function handleLogout() {
 
         <div
           v-if="auth.user"
-          class="mb-10 p-6 bg-surface/50 rounded-3xl border border-glass-border shadow-soft"
+          class="mb-10 p-6 bg-surface/50 rounded-3xl"
         >
           <div class="flex items-center gap-4">
             <div
@@ -176,7 +167,7 @@ function handleLogout() {
             class="flex items-center gap-4 px-6 py-5 rounded-2xl transition-all relative overflow-hidden"
             :class="[
               route.path === item.path
-                ? 'bg-accent text-background shadow-glass font-black'
+                ? 'bg-accent text-background font-black'
                 : 'text-muted hover:text-foreground hover:bg-surface/60 font-bold'
             ]"
           >
@@ -212,7 +203,7 @@ function handleLogout() {
 
           <button
             @click="handleLogout"
-            class="flex items-center justify-center gap-4 p-5 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 font-black text-xs uppercase tracking-widest active:bg-red-500 active:text-white transition-all shadow-soft"
+            class="flex items-center justify-center gap-4 p-5 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 font-black text-xs uppercase tracking-widest active:bg-red-500 active:text-white transition-all"
           >
             Exit Plug
           </button>

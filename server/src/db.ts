@@ -5,53 +5,13 @@ import { seedDatabase } from "./dbSeeder";
 
 dotenv.config();
 
-const isProduction = process.env.NODE_ENV === "production";
-const hasApiUrlWithoutPostgres =
-  Boolean(process.env.SUPABASE_URL) &&
-  Boolean(process.env.SUPABASE_KEY) &&
-  !process.env.POSTGRES_URL &&
-  !process.env.POSTGRES_PRISMA_URL &&
-  !process.env.POSTGRES_URL_NON_POOLING &&
-  !process.env.DATABASE_URL &&
-  !process.env.SUPABASE_DB_URL;
-
-if (hasApiUrlWithoutPostgres) {
-  console.warn("[db] SUPABASE_URL/SUPABASE_KEY terdeteksi, tapi pg.Pool butuh connection string Postgres.");
-  console.warn("[db] Untuk Vercel: set POSTGRES_URL (atau DATABASE_URL).");
-}
-
-const connectionString =
-  process.env.POSTGRES_URL ||
-  process.env.POSTGRES_PRISMA_URL ||
-  process.env.POSTGRES_URL_NON_POOLING ||
-  process.env.DATABASE_URL ||
-  process.env.SUPABASE_DB_URL;
-
-const pool = connectionString
-  ? new Pool({
-      connectionString,
-      // Vercel + Supabase biasanya butuh SSL.
-      ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
-      max: Number(process.env.PGPOOL_MAX ?? 20),
-      idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS ?? 30_000),
-      connectionTimeoutMillis: Number(process.env.PG_CONN_TIMEOUT_MS ?? 10_000),
-    })
-  : new Pool({
-      host: process.env.PGHOST ?? "localhost",
-      port: Number(process.env.PGPORT ?? 5432),
-      user: process.env.PGUSER ?? "postgres",
-      password: process.env.PGPASSWORD ?? "3211",
-      database: process.env.PGDATABASE ?? "waroeng",
-      ssl:
-        process.env.PGSSLMODE === "disable"
-          ? false
-          : isProduction
-            ? { rejectUnauthorized: false }
-            : false,
-      max: Number(process.env.PGPOOL_MAX ?? 20),
-      idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS ?? 30_000),
-      connectionTimeoutMillis: Number(process.env.PG_CONN_TIMEOUT_MS ?? 10_000),
-    });
+const pool = new Pool({
+  host: process.env.PGHOST ?? "localhost",
+  port: Number(process.env.PGPORT ?? 5432),
+  user: process.env.PGUSER ?? "postgres",
+  password: process.env.PGPASSWORD ?? "3211",
+  database: process.env.PGDATABASE ?? "waroeng",
+});
 
 export async function initializeDatabase() {
   await pool.query(`
@@ -77,6 +37,22 @@ export async function initializeDatabase() {
   `);
 
   await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'updated_at'
+      ) THEN
+        UPDATE users
+        SET updated_at = COALESCE(updated_at, created_at, NOW())
+        WHERE updated_at IS NULL;
+
+        ALTER TABLE users ALTER COLUMN updated_at SET DEFAULT NOW();
+      END IF;
+    END $$;
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS inventory (
       id SERIAL PRIMARY KEY,
       sku TEXT UNIQUE,
@@ -94,8 +70,31 @@ export async function initializeDatabase() {
   `);
 
   await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'inventory' AND column_name = 'updated_at'
+      ) THEN
+        UPDATE inventory
+        SET updated_at = COALESCE(updated_at, created_at, NOW())
+        WHERE updated_at IS NULL;
+
+        ALTER TABLE inventory ALTER COLUMN updated_at SET DEFAULT NOW();
+      END IF;
+    END $$;
+  `);
+
+  await pool.query(`
     DO $$ 
     BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'inventory' AND column_name = 'category'
+      ) THEN
+        ALTER TABLE inventory ADD COLUMN category TEXT;
+      END IF;
+
       IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
         WHERE table_name = 'inventory' AND column_name = 'category_id'
@@ -194,6 +193,22 @@ export async function initializeDatabase() {
   `);
 
   await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'suppliers' AND column_name = 'updated_at'
+      ) THEN
+        UPDATE suppliers
+        SET updated_at = COALESCE(updated_at, created_at, NOW())
+        WHERE updated_at IS NULL;
+
+        ALTER TABLE suppliers ALTER COLUMN updated_at SET DEFAULT NOW();
+      END IF;
+    END $$;
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS purchases (
       id SERIAL PRIMARY KEY,
       supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
@@ -230,13 +245,22 @@ export async function initializeDatabase() {
   `);
 
   await pool.query(`
-    UPDATE inventory i
-    SET category_id = (SELECT id FROM categories WHERE name = i.category LIMIT 1)
-    WHERE category_id IS NULL AND category IS NOT NULL;
-  `);
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'inventory' AND column_name = 'category'
+      ) AND EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'inventory' AND column_name = 'category_id'
+      ) THEN
+        UPDATE inventory i
+        SET category_id = (SELECT id FROM categories WHERE name = i.category LIMIT 1)
+        WHERE category_id IS NULL AND i.category IS NOT NULL;
 
-  await pool.query(`
-    ALTER TABLE inventory ALTER COLUMN category DROP NOT NULL;
+        ALTER TABLE inventory ALTER COLUMN category DROP NOT NULL;
+      END IF;
+    END $$;
   `);
 
   const userCount = await pool.query("SELECT COUNT(*) FROM users");
@@ -259,18 +283,6 @@ export async function initializeDatabase() {
   }
 
   await seedDatabase(pool);
-}
-
-let initPromise: Promise<void> | null = null;
-
-export function ensureDatabaseInitialized() {
-  if (!initPromise) {
-    initPromise = initializeDatabase().catch((error) => {
-      initPromise = null;
-      throw error;
-    });
-  }
-  return initPromise;
 }
 
 export { pool };

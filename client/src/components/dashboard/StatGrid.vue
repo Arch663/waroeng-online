@@ -41,7 +41,7 @@ const cards = computed(() => [
   {
     label: "Transaksi Hari Ini",
     value: props.stats.transaksiToday,
-    color: "text-foreground",
+    color: "text-secondary",
     icon: "transaction" as StatIcon,
   },
   {
@@ -54,20 +54,20 @@ const cards = computed(() => [
   {
     label: "Beli Stok (Hari)",
     value: Number(props.stats.purchasesToday || 0).toLocaleString("id-ID"),
-    color: "text-orange-500",
+    color: "text-accent",
     icon: "purchase" as StatIcon,
     prefix: "Rp",
   },
   {
     label: "Unit Terjual (Hari)",
     value: props.stats.productsSoldToday,
-    color: "text-foreground/80",
+    color: "text-secondary",
     icon: "sold" as StatIcon,
   },
   {
     label: "Omzet Bulan Ini",
     value: Number(props.stats.omzetMonth).toLocaleString("id-ID"),
-    color: "text-foreground/90",
+    color: "text-accent",
     icon: "monthRevenue" as StatIcon,
     prefix: "Rp",
   },
@@ -81,20 +81,20 @@ const cards = computed(() => [
   {
     label: "Beli Stok (Bulan)",
     value: Number(props.stats.purchasesMonth || 0).toLocaleString("id-ID"),
-    color: "text-orange-500",
+    color: "text-accent",
     icon: "delivery" as StatIcon,
     prefix: "Rp",
   },
   {
     label: "Transaksi (Bulan)",
     value: props.stats.transaksiMonth,
-    color: "text-foreground/80",
+    color: "text-secondary",
     icon: "analytics" as StatIcon,
   },
   {
     label: "Alert: Low Stock",
     value: props.stats.lowStockCount,
-    color: props.stats.lowStockCount > 0 ? "text-red-500" : "text-foreground/40",
+    color: props.stats.lowStockCount > 0 ? "text-secondary" : "text-secondary/40",
     icon: "alert" as StatIcon,
   },
 ]);
@@ -119,7 +119,7 @@ const iconPaths: Record<StatIcon, string[]> = {
       <div
         v-for="card in cards"
         :key="card.label"
-        class="bg-surface/30 backdrop-blur-2xl rounded-2xl p-6 shadow-glass border border-border/50 group hover:border-accent/40 transition-all duration-300 hover:-translate-y-1"
+        class="bg-surface/30 backdrop-blur-2xl rounded-2xl p-6 border border-border/50 group hover:border-accent/40 transition-all duration-300 hover:-translate-y-1"
       >
         <div class="flex items-center justify-between mb-4">
           <p class="text-xs uppercase tracking-widest font-black text-muted/50">

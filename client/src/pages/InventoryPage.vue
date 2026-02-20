@@ -170,7 +170,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-6 pb-12">
+  <div class="space-y6 md:space-y-10 pb-12 px-2 md:px-0">
     <InventoryActionBar
       :search-query="searchQuery"
       @add="handleAdd"

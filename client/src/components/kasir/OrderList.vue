@@ -28,7 +28,7 @@ const cancelRemove = () => {
 
 <template>
   <div
-    class="overflow-y-auto max-h-65 bg-surface rounded-2xl p-4 shadow-sm scrollbar scrollbar-thumb-foreground scrollbar-track-border scrollbar-hover:scrollbar-thumb-surface"
+    class="overflow-y-auto max-h-65 bg-surface rounded-2xl p-4 scrollbar scrollbar-thumb-foreground scrollbar-track-border scrollbar-hover:scrollbar-thumb-surface"
   >
     <h2 class="font-semibold text-foreground mb-4">Pesanan Baru</h2>
     <div

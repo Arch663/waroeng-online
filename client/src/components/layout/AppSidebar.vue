@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useTheme } from "@/composables/useTheme";
+import AppLogo from "@/components/ui/AppLogo.vue";
 
 type MenuIcon = "dashboard" | "cashier" | "inventory" | "purchase" | "supplier" | "report";
 
@@ -57,21 +58,13 @@ const iconPaths: Record<MenuIcon, string[]> = {
 
 <template>
   <aside
-    class="flex flex-col h-dvh fixed left-0 top-0 bg-glass-bg backdrop-blur-3xl border-r border-glass-border shadow-glass z-40 transition-all duration-300"
+    class="flex flex-col h-dvh fixed left-0 top-0 bg-glass-bg backdrop-blur-3xl border-r border-border z-40 transition-all duration-300"
     :class="isExpanded ? 'w-72' : 'w-22'"
     @mouseenter="isExpanded = true"
     @mouseleave="isExpanded = false"
   >
     <div class="p-4" :class="isExpanded ? 'px-6 pt-8 pb-4' : 'px-4 pt-6 pb-3'">
-      <div class="flex items-center" :class="isExpanded ? 'gap-4' : 'justify-center'">
-        <div class="w-12 h-12 bg-accent rounded-2xl flex items-center justify-center text-background text-2xl font-black shadow-glass">
-          W
-        </div>
-        <div v-show="isExpanded">
-          <h1 class="text-xl font-black text-foreground tracking-tighter uppercase leading-none">Waroeng</h1>
-          <p class="text-xs font-black text-accent tracking-widest uppercase mt-1">Online Ops</p>
-        </div>
-      </div>
+      <AppLogo :compact="!isExpanded" subtitle="Online" />
     </div>
 
     <nav class="flex-1 px-3 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-accent/35 scrollbar-track-transparent">
@@ -83,13 +76,13 @@ const iconPaths: Record<MenuIcon, string[]> = {
         :class="[
           isExpanded ? 'gap-4 px-4 justify-start' : 'justify-center px-2',
           route.path === item.path
-            ? 'bg-accent/10 text-accent shadow-inner border border-accent/20'
+            ? 'bg-accent/10 text-accent border border-accent/20'
             : 'text-muted hover:text-foreground hover:bg-surface/70',
         ]"
       >
         <div
           v-if="route.path === item.path && isExpanded"
-          class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-accent rounded-r-full shadow-glass"
+          class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-accent rounded-r-full"
         ></div>
 
         <svg
@@ -107,10 +100,10 @@ const iconPaths: Record<MenuIcon, string[]> = {
       </router-link>
     </nav>
 
-    <div class="p-3 bg-surface/50" :class="isExpanded ? 'p-6' : 'p-3'">
-      <div class="flex items-center rounded-2xl border border-glass-border bg-surface/50 mb-3" :class="isExpanded ? 'justify-between p-3' : 'justify-center p-2'">
+    <div class="p-3" :class="isExpanded ? 'p-6' : 'p-3'">
+      <div class="flex items-center rounded-2xl mb-3" :class="isExpanded ? 'justify-between p-3' : 'justify-center p-2'">
         <div v-show="isExpanded" class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full bg-accent animate-pulse shadow-glass"></div>
+          <div class="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
           <span class="text-xs font-black text-muted uppercase tracking-widest">Theme Sync</span>
         </div>
         <button
@@ -148,7 +141,7 @@ const iconPaths: Record<MenuIcon, string[]> = {
           <path d="M16 17l5-5-5-5" />
           <path d="M21 12H9" />
         </svg>
-        <span v-show="isExpanded" class="ml-2">Exit Plug</span>
+        <span v-show="isExpanded" class="ml-2">Exit</span>
       </button>
     </div>
   </aside>

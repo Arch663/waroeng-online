@@ -1,7 +1,6 @@
 ﻿<script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { DATABASE_API_URL } from "@/config/api";
 
 const router = useRouter();
 
@@ -22,7 +21,7 @@ async function handleRegister() {
 
   try {
     const res = await fetch(
-      `${DATABASE_API_URL}/auth/register`,
+      `${import.meta.env.VITE_DATABASE_API_URL}/auth/register`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -99,46 +98,46 @@ async function handleRegister() {
 
             <div v-if="!success" class="space-y-6">
               <div class="space-y-2">
-                <label class="text-xs font-black text-muted uppercase tracking-widest ml-2">Display Name</label>
+                <label class="text-xs font-black text-muted uppercase tracking-widest ml-2">full name</label>
                 <input
                   v-model="fullName"
                   type="text"
-                  placeholder="UNIT_NAME..."
+                  placeholder="ENTER FULL NAME"
                   class="w-full px-6 py-4 bg-background/50 border border-border/50 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all placeholder:text-muted/20 font-bold text-foreground"
                   required
                 />
               </div>
 
               <div class="space-y-2">
-                <label class="text-xs font-black text-muted uppercase tracking-widest ml-2">Access UID</label>
+                <label class="text-xs font-black text-muted uppercase tracking-widest ml-2">username</label>
                 <input
                   v-model="username"
                   type="text"
-                  placeholder="UID_CODE..."
+                  placeholder="ENTER USERNAME"
                   class="w-full px-6 py-4 bg-background/50 border border-border/50 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all placeholder:text-muted/20 font-bold text-foreground"
                   required
                 />
               </div>
 
               <div class="space-y-2">
-                <label class="text-xs font-black text-muted uppercase tracking-widest ml-2">Level Authorization</label>
+                <label class="text-xs font-black text-muted uppercase tracking-widest ml-2">Authorization</label>
                 <select
                   v-model="role"
                   class="w-full px-6 py-4 bg-background/50 border border-border/50 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all font-bold text-foreground appearance-none uppercase tracking-widest text-xs"
                   required
                 >
-                  <option value="cashier">Level 01: CASHIER</option>
-                  <option value="manager">Level 02: MANAGER</option>
-                  <option value="admin">Level 03: ADMIN</option>
+                  <option value="cashier">CASHIER</option>
+                  <option value="manager">MANAGER</option>
+                  <option value="admin">ADMIN</option>
                 </select>
               </div>
 
               <div class="space-y-2">
-                <label class="text-xs font-black text-muted uppercase tracking-widest ml-2">Encryption Key</label>
+                <label class="text-xs font-black text-muted uppercase tracking-widest ml-2">password</label>
                 <input
                   v-model="password"
                   type="password"
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  placeholder="ENTER PASSWORD"
                   class="w-full px-6 py-4 bg-background/50 border border-border/50 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all placeholder:text-muted/20 font-bold text-foreground"
                   required
                 />
@@ -149,17 +148,17 @@ async function handleRegister() {
                 :disabled="loading"
                 class="w-full py-5 bg-accent text-background rounded-2xl font-black uppercase tracking-widest shadow-glass shadow-accent/20 hover:shadow-accent/40 active:scale-95 disabled:opacity-50 transition-all text-xs mt-6"
               >
-                {{ loading ? "Processing..." : "Authorize Entry" }}
+                {{ loading ? "Processing..." : "LOGIN" }}
               </button>
             </div>
-          </form>
+          </form> 
 
           <div class="mt-10 pt-8 border-t border-glass-border text-center">
             <button
               @click="router.push('/login')"
               class="text-xs font-black text-muted hover:text-accent transition-colors uppercase tracking-widest"
             >
-              Cancel Operation
+              Cancel
             </button>
           </div>
         </div>

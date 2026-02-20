@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { DATABASE_API_URL } from "@/config/api";
+import Pagination from "@/components/ui/Pagination.vue";
 
 const props = defineProps<{
   open: boolean;
@@ -14,6 +15,49 @@ const emit = defineEmits<{
 
 const movements = ref<any[]>([]);
 const loading = ref(false);
+const currentPage = ref(1);
+const pageSize = 10;
+const sortBy = ref<
+  "created_at" | "movement_type" | "quantity" | "stock_after" | "created_by_name"
+>("created_at");
+const order = ref<"ASC" | "DESC">("DESC");
+
+const sortedMovements = computed(() => {
+  const items = [...movements.value];
+  items.sort((a, b) => {
+    const key = sortBy.value;
+    const left = a[key];
+    const right = b[key];
+
+    if (key === "created_at") {
+      const leftTs = new Date(String(left ?? "")).getTime();
+      const rightTs = new Date(String(right ?? "")).getTime();
+      return order.value === "ASC" ? leftTs - rightTs : rightTs - leftTs;
+    }
+
+    if (key === "quantity" || key === "stock_after") {
+      const leftNum = Number(left ?? 0);
+      const rightNum = Number(right ?? 0);
+      return order.value === "ASC" ? leftNum - rightNum : rightNum - leftNum;
+    }
+
+    const leftText = String(left ?? "").toLowerCase();
+    const rightText = String(right ?? "").toLowerCase();
+    return order.value === "ASC"
+      ? leftText.localeCompare(rightText)
+      : rightText.localeCompare(leftText);
+  });
+  return items;
+});
+
+const totalPages = computed(() => {
+  return Math.max(1, Math.ceil(sortedMovements.value.length / pageSize));
+});
+
+const paginatedMovements = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  return sortedMovements.value.slice(start, start + pageSize);
+});
 
 async function fetchMovements() {
   if (!props.itemId) return;
@@ -28,6 +72,7 @@ async function fetchMovements() {
     );
     if (res.ok) {
       movements.value = await res.json();
+      currentPage.value = 1;
     }
   } catch (error) {
     console.error("Gagal memuat riwayat stok:", error);
@@ -62,6 +107,27 @@ function formatType(type: string) {
       return { label: type, class: "bg-gray-500/10 text-gray-500" };
   }
 }
+
+function handlePageChange(page: number) {
+  currentPage.value = page;
+}
+
+function handleSort(
+  column:
+    | "created_at"
+    | "movement_type"
+    | "quantity"
+    | "stock_after"
+    | "created_by_name",
+) {
+  if (sortBy.value === column) {
+    order.value = order.value === "ASC" ? "DESC" : "ASC";
+  } else {
+    sortBy.value = column;
+    order.value = column === "created_at" ? "DESC" : "ASC";
+  }
+  currentPage.value = 1;
+}
 </script>
 
 <template>
@@ -71,7 +137,7 @@ function formatType(type: string) {
     @click.self="emit('update:open', false)"
   >
     <div
-      class="bg-surface text-foreground rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col max-h-dvh overflow-hidden border border-border"
+      class="bg-surface text-foreground rounded-3xl w-full max-w-2xl flex flex-col max-h-dvh overflow-hidden border border-border"
     >
       <div
         class="p-6 border-b border-border flex justify-between items-center bg-muted/5"
@@ -118,19 +184,54 @@ function formatType(type: string) {
 
         <table v-else class="w-full text-left border-collapse">
           <thead
-            class="sticky top-0 bg-surface shadow-sm text-xs uppercase tracking-wider text-muted font-bold"
+            class="sticky top-0 bg-surface text-xs uppercase tracking-wider text-muted font-bold"
           >
             <tr>
-              <th class="px-6 py-4">Tanggal</th>
-              <th class="px-6 py-4">Tipe</th>
-              <th class="px-6 py-4 text-right">Jumlah</th>
-              <th class="px-6 py-4 text-right">Sisa Stok</th>
-              <th class="px-6 py-4">Oleh</th>
+              <th class="px-6 py-4 cursor-pointer group" @click="handleSort('created_at')">
+                <div class="inline-flex items-center gap-1">
+                  Tanggal
+                  <span :class="sortBy === 'created_at' ? 'text-accent' : 'opacity-50'">
+                    {{ sortBy === "created_at" && order === "ASC" ? "↑" : "↓" }}
+                  </span>
+                </div>
+              </th>
+              <th class="px-6 py-4 cursor-pointer group" @click="handleSort('movement_type')">
+                <div class="inline-flex items-center gap-1">
+                  Tipe
+                  <span :class="sortBy === 'movement_type' ? 'text-accent' : 'opacity-50'">
+                    {{ sortBy === "movement_type" && order === "ASC" ? "↑" : "↓" }}
+                  </span>
+                </div>
+              </th>
+              <th class="px-6 py-4 text-right cursor-pointer group" @click="handleSort('quantity')">
+                <div class="inline-flex items-center gap-1">
+                  Jumlah
+                  <span :class="sortBy === 'quantity' ? 'text-accent' : 'opacity-50'">
+                    {{ sortBy === "quantity" && order === "ASC" ? "↑" : "↓" }}
+                  </span>
+                </div>
+              </th>
+              <th class="px-6 py-4 text-right cursor-pointer group" @click="handleSort('stock_after')">
+                <div class="inline-flex items-center gap-1">
+                  Sisa Stok
+                  <span :class="sortBy === 'stock_after' ? 'text-accent' : 'opacity-50'">
+                    {{ sortBy === "stock_after" && order === "ASC" ? "↑" : "↓" }}
+                  </span>
+                </div>
+              </th>
+              <th class="px-6 py-4 cursor-pointer group" @click="handleSort('created_by_name')">
+                <div class="inline-flex items-center gap-1">
+                  Oleh
+                  <span :class="sortBy === 'created_by_name' ? 'text-accent' : 'opacity-50'">
+                    {{ sortBy === "created_by_name" && order === "ASC" ? "↑" : "↓" }}
+                  </span>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-border">
             <tr
-              v-for="m in movements"
+              v-for="m in paginatedMovements"
               :key="m.id"
               class="hover:bg-muted/5 transition-colors"
             >
@@ -182,6 +283,13 @@ function formatType(type: string) {
             </tr>
           </tbody>
         </table>
+
+        <Pagination
+          v-if="movements.length > 0"
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          @page-change="handlePageChange"
+        />
       </div>
 
       <div class="p-6 border-t border-border bg-muted/5 flex justify-end">

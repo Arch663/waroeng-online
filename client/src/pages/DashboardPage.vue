@@ -54,6 +54,18 @@ const maxDailyRevenue = computed(() => {
   return Math.max(...summary.value.dailyMonthSales.map((item) => item.revenue));
 });
 
+const statsForGrid = computed(() => ({
+  ...summary.value.stats,
+  purchasesToday:
+    summary.value.stats.purchasesToday ??
+    summary.value.purchaseStats?.purchasesToday ??
+    0,
+  purchasesMonth:
+    summary.value.stats.purchasesMonth ??
+    summary.value.purchaseStats?.purchasesMonth ??
+    0,
+}));
+
 async function loadSummary() {
   loading.value = true;
   error.value = "";
@@ -85,7 +97,7 @@ onMounted(() => {
       <template #action>
         <button 
           @click="loadSummary" 
-          class="group p-4 bg-surface/40 backdrop-blur-xl border border-border rounded-2xl hover:bg-accent/10 transition-all shadow-glass text-foreground active:scale-90"
+          class="group p-4 bg-surface/40 backdrop-blur-xl border border-border rounded-2xl hover:bg-accent/10 transition-all text-accent active:scale-90"
           :disabled="loading"
         >
           <svg
@@ -111,21 +123,21 @@ onMounted(() => {
     </p>
 
     <!-- Stat Grid -->
-    <StatGrid :stats="summary.stats" :loading="loading" />
+    <StatGrid :stats="statsForGrid" :loading="loading" />
 
     <!-- Main Charts Row -->
     <div class="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3">
       <div class="lg:col-span-2">
         <div
           v-if="loading"
-          class="h-80 md:h-96 bg-surface/40 backdrop-blur-xl rounded-3xl p-5 md:p-8 border border-border shadow-glass"
+          class="h-80 md:h-96 bg-surface/40 backdrop-blur-xl rounded-3xl p-5 md:p-8 border border-border"
         >
           <Skeleton height="30px" width="40%" className="mb-8" />
           <Skeleton height="260px" borderRadius="16px" />
         </div>
         <div
           v-else
-          class="h-80 md:h-96 bg-surface/40 backdrop-blur-xl rounded-3xl p-5 md:p-8 border border-border shadow-glass"
+          class="h-80 md:h-96 bg-surface/40 backdrop-blur-xl rounded-3xl p-5 md:p-8 border border-border"
         >
           <TransactionVolumeChart :points="summary.dailyMonthSales" />
         </div>
@@ -133,7 +145,7 @@ onMounted(() => {
       <div class="lg:col-span-1">
         <div
           v-if="loading"
-          class="h-80 md:h-96 bg-surface/40 backdrop-blur-xl rounded-3xl p-5 md:p-8 border border-border shadow-glass"
+          class="h-80 md:h-96 bg-surface/40 backdrop-blur-xl rounded-3xl p-5 md:p-8 border border-border"
         >
           <Skeleton height="30px" width="60%" className="mb-8" />
           <Skeleton
@@ -145,7 +157,7 @@ onMounted(() => {
         </div>
         <div
           v-else
-          class="h-80 md:h-96 bg-surface/40 backdrop-blur-xl rounded-3xl border border-border shadow-glass"
+          class="h-80 md:h-96 bg-surface/40 backdrop-blur-xl rounded-3xl border border-border"
         >
           <TopProductsChart :points="summary.topProducts" />
         </div>
@@ -155,7 +167,7 @@ onMounted(() => {
     <!-- Monthly Detailed Analysis -->
     <div class="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3">
       <div
-        class="lg:col-span-2 h-80 md:h-96 bg-surface/40 backdrop-blur-2xl rounded-3xl border border-border shadow-glass overflow-hidden group transition-all duration-500 hover:border-accent/40 flex flex-col"
+        class="lg:col-span-2 h-80 md:h-96 bg-surface/40 backdrop-blur-2xl rounded-3xl border border-border overflow-hidden group transition-all duration-500 hover:border-accent/40 flex flex-col"
       >
         <div
           class="p-4 md:p-5 border-b border-border bg-accent/5 flex items-center justify-between gap-3"
@@ -165,7 +177,7 @@ onMounted(() => {
             <p class="text-xs text-muted font-bold mt-1 uppercase tracking-widest opacity-60">Visualisasi pendapatan realtime</p>
           </div>
           <span
-            class="text-xs bg-accent text-background px-3 py-1 rounded-sm font-black uppercase tracking-widest shadow-glass"
+            class="text-xs bg-accent text-background px-3 py-1 rounded-sm font-black uppercase tracking-widest"
             >Live Analysis</span
           >
         </div>
@@ -186,7 +198,7 @@ onMounted(() => {
             <div
               v-for="point in summary?.dailyMonthSales"
               :key="point.day"
-              class="grow bg-accent/20 hover:bg-accent hover:shadow-glass rounded-sm transition-all duration-300 relative group/bar"
+              class="grow bg-accent/20 hover:bg-accent hover rounded-sm transition-all duration-300 relative group/bar"
               :style="{ height: Math.max(5, (point.revenue / maxDailyRevenue) * 100) + '%' }"
             >
               <div
@@ -213,7 +225,7 @@ onMounted(() => {
       </div>
 
       <div
-        class="h-80 md:h-96 bg-surface/40 backdrop-blur-2xl rounded-3xl border border-border shadow-glass overflow-hidden transition-all duration-500"
+        class="h-80 md:h-96 bg-surface/40 backdrop-blur-2xl rounded-3xl border border-border overflow-hidden transition-all duration-500"
       >
         <div v-if="loading" class="h-full p-5 md:p-8">
           <Skeleton height="30px" width="55%" className="mb-8" />
@@ -225,7 +237,7 @@ onMounted(() => {
 
     <!-- Comparison & Profit -->
     <div class="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
-      <div class="h-80 bg-surface/40 rounded-3xl border border-border shadow-glass overflow-hidden transition-all duration-300 hover:border-accent/40">
+      <div class="h-80 bg-surface/40 rounded-3xl border border-border overflow-hidden transition-all duration-300 hover:border-accent/40">
         <ComparisonChart
           v-if="!loading"
           :sales="summary.weeklySales"
@@ -237,7 +249,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="h-80 bg-surface/40 rounded-3xl border border-border shadow-glass overflow-hidden transition-all duration-300 hover:border-accent/40">
+      <div class="h-80 bg-surface/40 rounded-3xl border border-border overflow-hidden transition-all duration-300 hover:border-accent/40">
         <ProfitChart
           v-if="!loading"
           :points="summary.weeklyProfit"
@@ -253,14 +265,14 @@ onMounted(() => {
 
     <!-- Monthly Summary -->
     <div class="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3">
-      <div class="lg:col-span-2 h-80 bg-surface/40 rounded-3xl border border-border shadow-glass overflow-hidden transition-all duration-300 hover:border-accent/40">
+      <div class="lg:col-span-2 h-80 bg-surface/40 rounded-3xl border border-border overflow-hidden transition-all duration-300 hover:border-accent/40">
         <MonthlyRevenueChart v-if="!loading" :points="summary.monthlySales" />
         <div v-else class="h-full p-5 md:p-8">
           <Skeleton height="30px" width="40%" className="mb-6" />
           <Skeleton height="200px" borderRadius="16px" />
         </div>
       </div>
-      <div class="lg:col-span-1 h-80 bg-surface/40 rounded-3xl border border-border shadow-glass overflow-hidden transition-all duration-300 hover:border-accent/40">
+      <div class="lg:col-span-1 h-80 bg-surface/40 rounded-3xl border border-border overflow-hidden transition-all duration-300 hover:border-accent/40">
         <ProfitChart
           v-if="!loading"
           :points="summary.monthlyProfit"
@@ -277,7 +289,7 @@ onMounted(() => {
     <!-- Transaction Log -->
     <div class="grid gap-4 md:gap-6 grid-cols-1 items-start">
       <div
-        class="h-88 md:h-96 bg-surface/40 backdrop-blur-3xl rounded-3xl border border-border shadow-glass overflow-hidden flex flex-col"
+        class="h-88 md:h-96 bg-surface/40 backdrop-blur-3xl rounded-3xl border border-border overflow-hidden flex flex-col"
       >
         <div class="p-5 md:p-8 border-b border-border bg-accent/5 flex items-center justify-between gap-3">
           <h2 class="font-black text-lg md:text-xl text-foreground uppercase tracking-tight">Log Transaksi Terakhir</h2>
@@ -291,7 +303,7 @@ onMounted(() => {
             <div
               v-for="trx in summary?.recentTransactions"
               :key="trx.id"
-              class="flex items-center justify-between p-6 bg-surface/20 border border-border rounded-2xl hover:bg-accent/5 transition-all duration-500 shadow-sm hover:shadow-glass group"
+              class="flex items-center justify-between p-6 bg-surface/20 border border-border rounded-2xl hover:bg-accent/5 transition-all duration-500 shadow-sm hover group"
             >
               <div class="min-w-0 pr-4">
                 <p class="font-black text-xs md:text-sm text-foreground uppercase tracking-tighter truncate group-hover:text-accent transition-colors">

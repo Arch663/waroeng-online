@@ -2,7 +2,6 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { DATABASE_API_URL } from "@/config/api";
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -20,7 +19,7 @@ async function handleLogin() {
 
   try {
     const res = await fetch(
-      `${DATABASE_API_URL}/auth/login`,
+      `${import.meta.env.VITE_DATABASE_API_URL}/auth/login`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,8 +54,8 @@ async function handleLogin() {
         class="bg-surface/30 backdrop-blur-3xl border border-glass-border rounded-4xl p-12 shadow-glass relative overflow-hidden group"
       >
         <!-- Decorative Elements -->
-        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-50" />
-        <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-50" />
+        <div class="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-accent to-transparent opacity-50" />
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-accent to-transparent opacity-50" />
         
         <div class="relative z-10">
           <div class="mb-12 text-center">
@@ -83,7 +82,7 @@ async function handleLogin() {
                 v-model="username"
                 type="text"
                 placeholder="ENTER USERNAME..."
-                class="w-full px-8 py-5 bg-background/50 border border-border/50 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all placeholder:text-muted/20 placeholder:font-black placeholder:text-xs font-bold text-foreground"
+                class="w-full px-8 py-5 bg-background/50 border border-border/50 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all placeholder:text-muted/20 font-bold text-foreground placeholder:text-xs"
                 required
               />
             </div>
@@ -93,8 +92,8 @@ async function handleLogin() {
               <input
                 v-model="password"
                 type="password"
-                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
-                class="w-full px-8 py-5 bg-background/50 border border-border/50 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all placeholder:text-muted/20 font-bold text-foreground"
+                placeholder="ENTER PASSWORD"
+                class="w-full px-8 py-5 bg-background/50 border border-border/50 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all placeholder:text-muted/20 font-bold text-foreground placeholder:text-xs"
                 required
               />
             </div>
@@ -110,7 +109,7 @@ async function handleLogin() {
 
           <div class="mt-12 pt-8 border-t border-glass-border text-center">
             <p class="text-xs font-black text-muted/40 uppercase tracking-widest">
-              NERV_HQ // ARCH663_WAROENG_OS Â© 2026
+              NERV_HQ // ARCH663_WAROENG_OS © 2026
             </p>
           </div>
         </div>

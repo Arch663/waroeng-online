@@ -9,7 +9,7 @@ defineEmits(["add", "search"]);
 </script>
 
 <template>
-  <div class="pt-6 space-y-8">
+  <div class="space-y-8">
     <PageTitle
       title="Inventori"
       highlight="Barang"
@@ -18,9 +18,9 @@ defineEmits(["add", "search"]);
       <template #action>
         <button
           @click="$emit('add')"
-          class="px-6 py-4 bg-accent text-background rounded-2xl font-black uppercase tracking-widest shadow-glass hover:shadow-accent/40 hover:-translate-y-1 transition-all active:scale-95 text-xs md:text-sm"
+          class="px-6 py-4 bg-accent/90 text-white rounded-2xl font-black uppercase tracking-widest hover:-translate-y-1 transition-all active:scale-95 text-xs md:text-sm"
         >
-          + Add New Unit
+          + Tambah Barang
         </button>
       </template>
     </PageTitle>
@@ -47,8 +47,8 @@ defineEmits(["add", "search"]);
       <input
         :value="searchQuery"
         type="text"
-        placeholder="SCAN SKU OR IDENTIFY UNIT NAME..."
-        class="w-full bg-surface/40 backdrop-blur-2xl border border-border rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:ring-4 focus:ring-accent/10 focus:border-accent shadow-glass transition-all placeholder:text-muted/40 placeholder:font-black placeholder:text-xs placeholder:tracking-widest"
+        placeholder="INPUT SKU ATAU NAMA..."
+        class="w-full bg-surface/40 backdrop-blur-2xl border border-border rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:ring-4 focus:ring-accent/10 focus:border-accent transition-all placeholder:text-muted/40 placeholder:font-black placeholder:text-xs placeholder:tracking-widest"
         @input="$emit('search', ($event.target as HTMLInputElement).value)"
       />
     </div>

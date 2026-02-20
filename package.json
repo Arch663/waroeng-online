@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:client": "vite",
     "dev:server": "tsx watch server/src/index.ts",
-    "dev:fullstack": "concurrently -k \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:all": "concurrently -k \"npm run dev:server\" \"npm run dev:client\"",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview"
   },

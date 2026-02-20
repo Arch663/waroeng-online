@@ -117,7 +117,8 @@ onBeforeUnmount(() => {
         <h3 class="text-xs font-black text-muted uppercase tracking-widest mb-2">Revenue Growth</h3>
         <h2 class="text-2xl font-black text-foreground uppercase tracking-tight">Omzet Bulanan</h2>
       </div>
-      <div class="w-10 h-10 flex items-center justify-center bg-accent/10 text-accent rounded-xl shadow-glass">
+      <div class="w-10 h-10 flex items-center justify-center bg-accent/10 text-accent rounded-xl
+      ">
         <svg
           class="w-5 h-5"
           viewBox="0 0 24 24"

@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import {
   getPurchases,
   createPurchase,
@@ -9,12 +9,26 @@ import {
 import { getSuppliers, type Supplier } from "@/services/supplierApi";
 import { getInventoryItems, type InventoryItem } from "@/services/inventoryApi";
 import PageTitle from "@/components/ui/PageTitle.vue";
+import Pagination from "@/components/ui/Pagination.vue";
+import TableCard from "@/components/ui/TableCard.vue";
+
+type PurchaseSortColumn =
+  | "purchase_date"
+  | "product_name"
+  | "supplier_name"
+  | "quantity"
+  | "cost_price"
+  | "total_cost";
 
 const purchases = ref<Purchase[]>([]);
 const suppliers = ref<Supplier[]>([]);
 const products = ref<InventoryItem[]>([]);
 const loading = ref(false);
 const showForm = ref(false);
+const sortBy = ref<PurchaseSortColumn>("purchase_date");
+const order = ref<"ASC" | "DESC">("DESC");
+const currentPage = ref(1);
+const pageSize = 10;
 
 const form = ref<PurchasePayload>({
   supplier_id: 0,
@@ -35,6 +49,7 @@ async function loadData() {
     purchases.value = p;
     suppliers.value = s;
     products.value = invRes.items;
+    currentPage.value = 1;
   } catch (err) {
     console.error("Gagal memuat data:", err);
   } finally {
@@ -67,6 +82,57 @@ function handleAdd() {
   showForm.value = true;
 }
 
+function handleSort(column: PurchaseSortColumn) {
+  if (sortBy.value === column) {
+    order.value = order.value === "ASC" ? "DESC" : "ASC";
+  } else {
+    sortBy.value = column;
+    order.value = "ASC";
+  }
+  currentPage.value = 1;
+}
+
+const sortedPurchases = computed(() => {
+  const items = [...purchases.value];
+  items.sort((a, b) => {
+    const key = sortBy.value;
+    const left = a[key];
+    const right = b[key];
+
+    if (key === "purchase_date") {
+      const leftTs = new Date(String(left ?? "")).getTime();
+      const rightTs = new Date(String(right ?? "")).getTime();
+      return order.value === "ASC" ? leftTs - rightTs : rightTs - leftTs;
+    }
+
+    if (key === "quantity" || key === "cost_price" || key === "total_cost") {
+      const leftNum = Number(left ?? 0);
+      const rightNum = Number(right ?? 0);
+      return order.value === "ASC" ? leftNum - rightNum : rightNum - leftNum;
+    }
+
+    const leftText = String(left ?? "").toLowerCase();
+    const rightText = String(right ?? "").toLowerCase();
+    return order.value === "ASC"
+      ? leftText.localeCompare(rightText)
+      : rightText.localeCompare(leftText);
+  });
+  return items;
+});
+
+const totalPages = computed(() => {
+  return Math.max(1, Math.ceil(sortedPurchases.value.length / pageSize));
+});
+
+const paginatedPurchases = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  return sortedPurchases.value.slice(start, start + pageSize);
+});
+
+function handlePageChange(page: number) {
+  currentPage.value = page;
+}
+
 onMounted(loadData);
 </script>
 
@@ -91,27 +157,90 @@ onMounted(loadData);
       Memuat data...
     </div>
 
-    <div
+    <TableCard
       v-else
-      class="bg-surface rounded-3xl border border-border overflow-hidden shadow-sm"
+      wrapper-class="bg-surface rounded-3xl border border-border overflow-hidden"
     >
-      <div class="overflow-x-auto">
+      <template #default>
         <table class="w-full text-left">
           <thead
             class="bg-muted/10 text-xs uppercase tracking-wider font-bold text-muted"
           >
             <tr>
-              <th class="px-6 py-4 text-foreground">Tanggal</th>
-              <th class="px-6 py-4">Produk</th>
-              <th class="px-6 py-4">Supplier</th>
-              <th class="px-6 py-4 text-right">Qty</th>
-              <th class="px-6 py-4 text-right">Harga Beli</th>
-              <th class="px-6 py-4 text-right">Total</th>
+              <th
+                class="px-6 py-4 text-foreground cursor-pointer group"
+                @click="handleSort('purchase_date')"
+              >
+                <div class="flex items-center gap-1">
+                  Tanggal
+                  <span
+                    class="opacity-0 group-hover:opacity-100 transition-opacity"
+                    :class="sortBy === 'purchase_date' ? 'opacity-100 text-accent' : ''"
+                  >
+                    {{ sortBy === "purchase_date" && order === "ASC" ? "↑" : "↓" }}
+                  </span>
+                </div>
+              </th>
+              <th class="px-6 py-4 cursor-pointer group" @click="handleSort('product_name')">
+                <div class="flex items-center gap-1">
+                  Produk
+                  <span
+                    class="opacity-0 group-hover:opacity-100 transition-opacity"
+                    :class="sortBy === 'product_name' ? 'opacity-100 text-accent' : ''"
+                  >
+                    {{ sortBy === "product_name" && order === "ASC" ? "↑" : "↓" }}
+                  </span>
+                </div>
+              </th>
+              <th class="px-6 py-4 cursor-pointer group" @click="handleSort('supplier_name')">
+                <div class="flex items-center gap-1">
+                  Supplier
+                  <span
+                    class="opacity-0 group-hover:opacity-100 transition-opacity"
+                    :class="sortBy === 'supplier_name' ? 'opacity-100 text-accent' : ''"
+                  >
+                    {{ sortBy === "supplier_name" && order === "ASC" ? "↑" : "↓" }}
+                  </span>
+                </div>
+              </th>
+              <th class="px-6 py-4 text-right cursor-pointer group" @click="handleSort('quantity')">
+                <div class="flex items-center justify-end gap-1">
+                  Qty
+                  <span
+                    class="opacity-0 group-hover:opacity-100 transition-opacity"
+                    :class="sortBy === 'quantity' ? 'opacity-100 text-accent' : ''"
+                  >
+                    {{ sortBy === "quantity" && order === "ASC" ? "↑" : "↓" }}
+                  </span>
+                </div>
+              </th>
+              <th class="px-6 py-4 text-right cursor-pointer group" @click="handleSort('cost_price')">
+                <div class="flex items-center justify-end gap-1">
+                  Harga Beli
+                  <span
+                    class="opacity-0 group-hover:opacity-100 transition-opacity"
+                    :class="sortBy === 'cost_price' ? 'opacity-100 text-accent' : ''"
+                  >
+                    {{ sortBy === "cost_price" && order === "ASC" ? "↑" : "↓" }}
+                  </span>
+                </div>
+              </th>
+              <th class="px-6 py-4 text-right cursor-pointer group" @click="handleSort('total_cost')">
+                <div class="flex items-center justify-end gap-1">
+                  Total
+                  <span
+                    class="opacity-0 group-hover:opacity-100 transition-opacity"
+                    :class="sortBy === 'total_cost' ? 'opacity-100 text-accent' : ''"
+                  >
+                    {{ sortBy === "total_cost" && order === "ASC" ? "↑" : "↓" }}
+                  </span>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-border">
             <tr
-              v-for="p in purchases"
+              v-for="p in paginatedPurchases"
               :key="p.id"
               class="hover:bg-muted/5 transition-colors"
             >
@@ -160,13 +289,20 @@ onMounted(loadData);
             </tr>
             <tr v-if="purchases.length === 0">
               <td colspan="6" class="px-6 py-12 text-center text-muted">
-                Belum ada riwayat pembelian.
+                Tidak ada riwayat pembelian.
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <Pagination
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          @page-change="handlePageChange"
+        />
+      </template>
+    </TableCard>
 
     <!-- Purchase Form Modal -->
     <div
@@ -298,8 +434,6 @@ onMounted(loadData);
 .purchase-field:-webkit-autofill:focus,
 .purchase-field:-webkit-autofill:active {
   -webkit-text-fill-color: var(--foreground);
-  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
-  box-shadow: 0 0 0 1000px var(--surface) inset;
   transition: background-color 9999s ease-in-out 0s;
 }
 </style>

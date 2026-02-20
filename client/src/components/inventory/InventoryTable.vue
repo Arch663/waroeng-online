@@ -17,7 +17,7 @@ function handleSort(column: string) {
 <template>
   <div>
     <div
-      class="bg-surface/60 backdrop-blur-xl rounded-2xl border border-border overflow-hidden shadow-xl"
+      class="bg-surface/60 backdrop-blur-xl rounded-2xl border border-border overflow-hidden"
     >
       <div class="overflow-x-auto w-full">
         <table class="text-sm w-full">
@@ -33,7 +33,7 @@ function handleSort(column: string) {
                     class="text-xs opacity-0 group-hover/h:opacity-100 transition-opacity"
                     :class="sortBy === 'sku' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "sku" && order === "ASC" ? "â–²" : "â–¼" }}
+                    {{ sortBy === "sku" && order === "ASC" ? "↑" : "↓" }}
                   </span>
                 </div>
               </th>
@@ -47,7 +47,7 @@ function handleSort(column: string) {
                     class="text-xs opacity-0 group-hover/h:opacity-100 transition-opacity"
                     :class="sortBy === 'name' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "name" && order === "ASC" ? "â–²" : "â–¼" }}
+                    {{ sortBy === "name" && order === "ASC" ? "↑" : "↓" }}
                   </span>
                 </div>
               </th>
@@ -63,7 +63,7 @@ function handleSort(column: string) {
                     class="text-xs opacity-0 group-hover/h:opacity-100 transition-opacity"
                     :class="sortBy === 'price' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "price" && order === "ASC" ? "â–²" : "â–¼" }}
+                    {{ sortBy === "price" && order === "ASC" ? "↑" : "↓" }}
                   </span>
                 </div>
               </th>
@@ -77,7 +77,7 @@ function handleSort(column: string) {
                     class="text-xs opacity-0 group-hover/h:opacity-100 transition-opacity"
                     :class="sortBy === 'stock' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "stock" && order === "ASC" ? "â–²" : "â–¼" }}
+                    {{ sortBy === "stock" && order === "ASC" ? "↑" : "↓" }}
                   </span>
                 </div>
               </th>
@@ -93,7 +93,7 @@ function handleSort(column: string) {
                       sortBy === 'category' ? 'opacity-100 text-accent' : ''
                     "
                   >
-                    {{ sortBy === "category" && order === "ASC" ? "â–²" : "â–¼" }}
+                    {{ sortBy === "category" && order === "ASC" ? "↑" : "↓" }}
                   </span>
                 </div>
               </th>

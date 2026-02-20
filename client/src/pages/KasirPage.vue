@@ -32,6 +32,7 @@ const meta = ref<InventoryResponse["meta"]>({
 const categoriesData = ref<Category[]>([]);
 const active = ref((route.query.category as string) || "Semua");
 const searchQuery = ref((route.query.q as string) || "");
+const pageSize = ref(Number(route.query.limit) || 12);
 const loading = ref(false);
 const checkoutLoading = ref(false);
 const error = ref("");
@@ -59,7 +60,7 @@ async function loadInventory(page = 1) {
     const res = await getInventoryItems({
       q: searchQuery.value,
       page,
-      limit: meta.value.limit,
+      limit: pageSize.value,
       category_id: activeCatId,
     });
 
@@ -72,7 +73,10 @@ async function loadInventory(page = 1) {
       category: item.category,
       image: item.image,
     }));
-    meta.value = res.meta;
+    meta.value = {
+      ...res.meta,
+      limit: pageSize.value,
+    };
 
     cart.items = cart.items.map((cartItem) => {
       const source = products.value.find((row) => row.id === cartItem.id);
@@ -125,6 +129,8 @@ watch(
   () => {
     searchQuery.value = (route.query.q as string) || "";
     active.value = (route.query.category as string) || "Semua";
+    pageSize.value = Number(route.query.limit) || 12;
+    meta.value.limit = pageSize.value;
     loadInventory(Number(route.query.page) || 1);
   },
   { deep: true },
@@ -165,6 +171,17 @@ function handlePageChange(p: number) {
   router.push({ query: { ...route.query, page: p } });
 }
 
+function handlePageSizeChange(event: Event) {
+  const value = Number((event.target as HTMLSelectElement).value) || 12;
+  router.push({
+    query: {
+      ...route.query,
+      limit: value,
+      page: 1,
+    },
+  });
+}
+
 onMounted(async () => {
   await loadCategories();
   loadInventory(Number(route.query.page) || 1);
@@ -182,7 +199,7 @@ onMounted(async () => {
         <template #action>
           <button
             @click="showCartMobile = !showCartMobile"
-            class="lg:hidden relative p-4 bg-accent text-background rounded-2xl shadow-glass active:scale-90 transition-all"
+            class="lg:hidden relative p-4 bg-accent text-background rounded-2xl active:scale-90 transition-all"
           >
             <svg
               class="w-6 h-6"
@@ -228,8 +245,8 @@ onMounted(async () => {
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="ENTER UNIT CODE OR SCAN BARCODE..."
-          class="w-full bg-surface/30 backdrop-blur-3xl border border-border/50 rounded-2xl py-5 pl-14 pr-6 focus:outline-none focus:ring-4 focus:ring-accent/10 focus:border-accent shadow-glass transition-all placeholder:text-muted/30 placeholder:font-black placeholder:text-xs placeholder:tracking-widest"
+          placeholder="INPUT NAMA BARANG..."
+          class="w-full bg-surface/30 backdrop-blur-3xl border border-border/50 rounded-2xl py-5 pl-14 pr-6 focus:outline-none focus:ring-4 focus:ring-accent/10 focus:border-accent transition-all placeholder:text-muted/30 placeholder:font-black placeholder:text-xs placeholder:tracking-widest"
         />
       </div>
     </div>
@@ -331,6 +348,21 @@ onMounted(async () => {
         </div>
 
         <template v-else>
+          <div class="flex items-center justify-end gap-2">
+            <label for="kasir-page-size" class="text-xs text-muted">Items / halaman</label>
+            <select
+              id="kasir-page-size"
+              :value="pageSize"
+              @change="handlePageSizeChange"
+              class="px-3 py-2 rounded-xl border border-border bg-surface text-sm"
+            >
+              <option :value="8">8</option>
+              <option :value="12">12</option>
+              <option :value="18">18</option>
+              <option :value="24">24</option>
+            </select>
+          </div>
+
           <ProductGrid :products="products" @add="cart.add" />
 
           <div
@@ -409,4 +441,7 @@ onMounted(async () => {
     </Transition>
   </div>
 </template>
+
+
+
 

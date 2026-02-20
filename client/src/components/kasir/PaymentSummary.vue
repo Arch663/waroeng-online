@@ -50,7 +50,7 @@ watch(
 </script>
 
 <template>
-  <div class="bg-surface rounded-2xl p-4 shadow-sm mt-4 border border-border">
+  <div class="bg-surface rounded-2xl p-4 mt-4 border border-border">
     <div class="space-y-3">
       <div class="flex justify-between text-muted">
         <span>Subtotal</span>
@@ -136,7 +136,7 @@ watch(
     </div>
 
     <button
-      class="w-full mt-6 bg-accent disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-accent/20 hover:bg-accent/90 transition-all active:scale-95"
+      class="w-full mt-6 bg-accent disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg hover:bg-accent/90 transition-all active:scale-95"
       :disabled="loading || !canCheckout"
       @click="handleCheckout"
     >

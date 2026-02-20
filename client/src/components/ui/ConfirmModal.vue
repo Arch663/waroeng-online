@@ -22,7 +22,7 @@ const variantClasses = computed(() => {
     case "warning":
       return "bg-orange-500 hover:bg-orange-600 text-white shadow-orange-500/30";
     default:
-      return "bg-accent hover:bg-accent/90 text-background shadow-glass";
+      return "bg-accent hover:bg-accent/90 text-background";
   }
 });
 </script>
@@ -35,7 +35,7 @@ const variantClasses = computed(() => {
       @click.self="emit('cancel')"
     >
       <div
-        class="bg-surface/30 backdrop-blur-3xl border border-glass-border rounded-4xl shadow-glass max-w-md w-full p-10 space-y-8 relative overflow-hidden transition-all duration-300 scale-100"
+        class="bg-surface/30 backdrop-blur-3xl border border-glass-border rounded-4xl max-w-md w-full p-10 space-y-8 relative overflow-hidden transition-all duration-300 scale-100"
       >
         <!-- Decorative bar -->
         <div 

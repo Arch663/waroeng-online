@@ -106,7 +106,7 @@ onMounted(() => {
     class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
     @click.self="emit('update:open', false)"
   >
-    <div class="bg-surface rounded-3xl shadow-2xl w-full max-w-md p-8 border border-border flex flex-col max-h-dvh">
+    <div class="bg-surface rounded-3xl w-full max-w-md p-8 border border-border flex flex-col max-h-dvh">
       <div class="overflow-y-auto overflow-x-hidden pr-1 space-y-5 scrollbar-thin scrollbar-thumb-accent/40 scrollbar-track-transparent">
         <h2 class="text-2xl font-bold mb-1">
           {{ item ? "Edit" : "Tambah" }} Barang
@@ -182,7 +182,7 @@ onMounted(() => {
               <img :src="form.image" class="w-full h-full object-contain" />
               <button
                 @click="form.image = ''"
-                class="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full text-xs shadow-lg"
+                class="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full text-xs"
                 type="button"
               >
                 ×
@@ -255,7 +255,7 @@ onMounted(() => {
           <button
             :disabled="loading"
             @click="submit"
-            class="flex-1 py-3 bg-accent text-white rounded-2xl font-bold shadow-lg shadow-accent/20 disabled:opacity-50"
+            class="flex-1 py-3 bg-accent text-white rounded-2xl font-bold disabled:opacity-50"
           >
             {{ loading ? "Menyimpan..." : "Simpan" }}
           </button>
@@ -280,8 +280,6 @@ onMounted(() => {
 .inventory-field:-webkit-autofill:focus,
 .inventory-field:-webkit-autofill:active {
   -webkit-text-fill-color: var(--foreground);
-  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
-  box-shadow: 0 0 0 1000px var(--surface) inset;
   transition: background-color 9999s ease-in-out 0s;
 }
 </style>
