@@ -1,6 +1,7 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { useCartStore } from "@/stores/useCartStore";
+import { useI18n } from "@/composables/useI18n";
 
 const props = defineProps<{
   loading?: boolean;
@@ -12,6 +13,7 @@ const emit = defineEmits<{
 
 const cart = useCartStore();
 const amountPaid = ref<number | null>(null);
+const { t } = useI18n();
 
 const change = computed(() => {
   if (!amountPaid.value || amountPaid.value < cart.total) return 0;
@@ -36,9 +38,9 @@ function handleCheckout() {
     paid: amountPaid.value as number,
     change: change.value,
   });
+  amountPaid.value = 0;
 }
 
-// Reset paid amount when cart total changes
 watch(
   () => cart.total,
   (newTotal) => {
@@ -53,7 +55,7 @@ watch(
   <div class="bg-surface rounded-2xl p-4 mt-4 border border-border">
     <div class="space-y-3">
       <div class="flex justify-between text-muted">
-        <span>Subtotal</span>
+        <span>{{ t('payment_subtotal') }}</span>
         <span
           >Rp
           {{
@@ -68,7 +70,7 @@ watch(
       <div
         class="flex justify-between font-bold text-xl border-t border-border pt-3"
       >
-        <span class="text-foreground">Total</span>
+        <span class="text-foreground">{{ t('payment_total') }}</span>
         <span class="text-accent">
           Rp
           {{
@@ -80,9 +82,8 @@ watch(
         </span>
       </div>
 
-      <!-- Payment Input -->
       <div class="pt-4 space-y-2">
-        <label class="text-sm font-medium text-muted">Uang Bayar</label>
+        <label class="text-sm font-medium text-muted">{{ t('payment_amount') }}</label>
         <div class="relative">
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
             >Rp</span
@@ -97,7 +98,6 @@ watch(
         </div>
       </div>
 
-      <!-- Quick Buttons -->
       <div class="grid grid-cols-3 gap-2">
         <button
           v-for="amt in [50000, 100000, 200000]"
@@ -111,13 +111,12 @@ watch(
           @click="setAmount(cart.total)"
           class="col-span-3 py-2 text-xs bg-accent/10 text-accent hover:bg-accent/20 rounded-lg transition-colors border border-accent/20 font-medium"
         >
-          Uang Pas
+          {{ t('payment_exact') }}
         </button>
       </div>
 
-      <!-- Change Display -->
       <div v-if="amountPaid !== null" class="flex justify-between pt-2">
-        <span class="text-sm text-muted">Kembalian</span>
+        <span class="text-sm text-muted">{{ t('payment_change') }}</span>
         <span
           :class="[
             'font-bold',
@@ -140,9 +139,8 @@ watch(
       :disabled="loading || !canCheckout"
       @click="handleCheckout"
     >
-      <span v-if="loading">Memproses...</span>
-      <span v-else>Konfirmasi Bayar</span>
+      <span v-if="loading">{{ t('common_process') }}</span>
+      <span v-else>{{ t('payment_confirm') }}</span>
     </button>
   </div>
 </template>
-

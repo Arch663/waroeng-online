@@ -1,6 +1,6 @@
 # Waroeng Project
 
-Vue + Vite frontend with an Express API and PostgreSQL database for inventory.
+Vue + Vite frontend with an Express API and MongoDB database for inventory.
 
 ## Setup
 
@@ -9,7 +9,7 @@ Vue + Vite frontend with an Express API and PostgreSQL database for inventory.
 npm install
 ```
 
-2. Copy env file and set your database credentials:
+2. Copy env file and set your MongoDB connection:
 ```bash
 # macOS/Linux
 cp .env.example .env
@@ -18,13 +18,13 @@ cp .env.example .env
 Copy-Item .env.example .env
 ```
 
-3. Make sure PostgreSQL is running and the database in `PGDATABASE` exists.
+3. Make sure MongoDB is running and database in `MONGODB_DB_NAME` is accessible.
 
 ## Run
 
 Run frontend + backend together:
 ```bash
-npm run dev:fullstack
+npm run dev:all
 ```
 
 Or separately:

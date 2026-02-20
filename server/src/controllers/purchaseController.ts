@@ -1,7 +1,6 @@
-
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../middleware/authMiddleware";
-import { pool } from "../db";
+import { db, getNextId } from "../db";
 
 export const getPurchases = async (
     _req: AuthRequest,
@@ -9,15 +8,29 @@ export const getPurchases = async (
     next: NextFunction,
 ) => {
     try {
-        const result = await pool.query(`
-    SELECT p.*, s.name as supplier_name, i.name as product_name, u.full_name as created_by_name
-    FROM purchases p
-    LEFT JOIN suppliers s ON p.supplier_id = s.id
-    LEFT JOIN inventory i ON p.inventory_id = i.id
-    LEFT JOIN users u ON p.created_by = u.id
-    ORDER BY p.purchase_date DESC
-  `);
-        res.json(result.rows);
+        const purchases = await db.collection("purchases").find({}, { projection: { _id: 0 } }).sort({ purchase_date: -1 }).toArray();
+        const supplierIds = Array.from(new Set(purchases.map((p: any) => p.supplier_id)));
+        const productIds = Array.from(new Set(purchases.map((p: any) => p.inventory_id)));
+        const userIds = Array.from(new Set(purchases.map((p: any) => p.created_by).filter(Boolean)));
+
+        const [suppliers, inventory, users] = await Promise.all([
+            db.collection("suppliers").find({ id: { $in: supplierIds } }, { projection: { _id: 0, id: 1, name: 1 } }).toArray(),
+            db.collection("inventory").find({ id: { $in: productIds } }, { projection: { _id: 0, id: 1, name: 1 } }).toArray(),
+            db.collection("users").find({ id: { $in: userIds } }, { projection: { _id: 0, id: 1, full_name: 1 } }).toArray(),
+        ]);
+
+        const supplierMap = new Map(suppliers.map((s: any) => [s.id, s.name]));
+        const productMap = new Map(inventory.map((i: any) => [i.id, i.name]));
+        const userMap = new Map(users.map((u: any) => [u.id, u.full_name]));
+
+        res.json(
+            purchases.map((p: any) => ({
+                ...p,
+                supplier_name: supplierMap.get(p.supplier_id) ?? null,
+                product_name: productMap.get(p.inventory_id) ?? null,
+                created_by_name: p.created_by ? userMap.get(p.created_by) ?? null : null,
+            })),
+        );
     } catch (error) {
         next(error);
     }
@@ -28,60 +41,47 @@ export const createPurchase = async (
     res: Response,
     next: NextFunction,
 ) => {
-    const client = await pool.connect();
     try {
-        const { supplier_id, inventory_id, quantity, cost_price, notes } =
-            req.body;
-        await client.query("BEGIN");
+        const { supplier_id, inventory_id, quantity, cost_price, notes } = req.body;
+        const inv = await db.collection("inventory").findOne({ id: Number(inventory_id) });
+        if (!inv) throw new Error("Inventory item not found.");
 
-        const invRes = await client.query(
-            "SELECT stock FROM inventory WHERE id = $1 FOR UPDATE",
-            [inventory_id],
+        const oldStock = Number(inv.stock);
+        const parsedQty = Number(quantity);
+        const parsedCostPrice = Number(cost_price);
+        const purchase = {
+            id: await getNextId("purchases"),
+            supplier_id: Number(supplier_id),
+            inventory_id: Number(inventory_id),
+            quantity: parsedQty,
+            cost_price: parsedCostPrice,
+            total_cost: parsedQty * parsedCostPrice,
+            notes,
+            created_by: req.user?.id ?? null,
+            purchase_date: new Date(),
+        };
+
+        await db.collection("purchases").insertOne(purchase);
+        await db.collection("inventory").updateOne(
+            { id: Number(inventory_id) },
+            { $inc: { stock: parsedQty }, $set: { updated_at: new Date(), updated_by: req.user?.id ?? null } },
         );
-        if (invRes.rowCount === 0) throw new Error("Inventory item not found.");
-        const oldStock = Number(invRes.rows[0].stock);
+        await db.collection("stock_movements").insertOne({
+            id: await getNextId("stock_movements"),
+            inventory_id: Number(inventory_id),
+            movement_type: "purchase",
+            quantity: parsedQty,
+            stock_before: oldStock,
+            stock_after: oldStock + parsedQty,
+            reference_id: purchase.id,
+            reference_type: "purchase",
+            notes: notes || "Pembelian barang",
+            created_by: req.user?.id ?? null,
+            created_at: new Date(),
+        });
 
-        const result = await client.query(
-            `INSERT INTO purchases (supplier_id, inventory_id, quantity, cost_price, total_cost, notes, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-            [
-                supplier_id,
-                inventory_id,
-                quantity,
-                cost_price,
-                quantity * cost_price,
-                notes,
-                req.user?.id,
-            ],
-        );
-
-        const purchase = result.rows[0];
-
-        await client.query(
-            "UPDATE inventory SET stock = stock + $1, updated_at = NOW() WHERE id = $2",
-            [quantity, inventory_id],
-        );
-
-        await client.query(
-            `INSERT INTO stock_movements (inventory_id, movement_type, quantity, stock_before, stock_after, reference_id, reference_type, notes, created_by)
-       VALUES ($1, 'purchase', $2, $3, $4, $5, 'purchase', $6, $7)`,
-            [
-                inventory_id,
-                quantity,
-                oldStock,
-                oldStock + quantity,
-                purchase.id,
-                notes || "Pembelian barang",
-                req.user?.id,
-            ],
-        );
-
-        await client.query("COMMIT");
         res.status(201).json(purchase);
     } catch (error) {
-        await client.query("ROLLBACK");
         next(error);
-    } finally {
-        client.release();
     }
 };

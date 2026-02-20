@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "@/composables/useI18n";
 import InventoryTable from "@/components/inventory/InventoryTable.vue";
 import InventoryActionBar from "@/components/inventory/InventoryActionBar.vue";
 import InventoryFormModal from "@/components/inventory/InventoryFormModal.vue";
@@ -42,6 +43,7 @@ const itemToDelete = ref<number | null>(null);
 const loading = ref(false);
 const saving = ref(false);
 const error = ref("");
+const { t } = useI18n();
 
 async function loadItems(page = meta.value.currentPage) {
   loading.value = true;
@@ -170,7 +172,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y6 md:space-y-10 pb-12 px-2 md:px-0">
+  <div class="space-y-8 md:space-y-10 pb-12 px-2 md:px-0">
     <InventoryActionBar
       :search-query="searchQuery"
       @add="handleAdd"
@@ -187,7 +189,7 @@ onMounted(() => {
     <div class="relative min-h-100">
       <div v-if="loading" class="space-y-4">
         <div
-          class="bg-surface/60 backdrop-blur-xl rounded-3xl p-6 border border-border"
+          class="bg-surface rounded-2xl p-6 border border-border"
         >
           <div class="flex gap-4 mb-6">
             <Skeleton v-for="i in 5" :key="i" height="20px" />
@@ -224,12 +226,12 @@ onMounted(() => {
 
       <div
         v-else
-        class="py-20 text-center text-muted bg-surface/40 backdrop-blur-xl rounded-3xl border border-border mt-6"
+        class="py-20 text-center text-muted bg-surface rounded-2xl border border-border mt-6"
       >
         <p class="text-6xl mb-4">📦</p>
-        <p class="font-medium text-lg">Tidak ada barang ditemukan.</p>
+        <p class="font-medium text-lg">{{ t("inventory_not_found") }}</p>
         <p v-if="searchQuery" class="text-sm">
-          Coba kata kunci lain atau periksa SKU Anda.
+          {{ t("inventory_try_other") }}
         </p>
       </div>
     </div>
@@ -249,17 +251,20 @@ onMounted(() => {
 
     <ConfirmModal
       :open="showDeleteConfirm"
-      title="Hapus Barang"
+      :title="`${t('common_delete')} ${t('inventory_highlight')}`"
       :message="
         itemToDelete
           ? `Apakah Anda yakin ingin menghapus '${items.find((i) => i.id === itemToDelete)?.name}'? Tindakan ini tidak dapat dibatalkan.`
           : 'Apakah Anda yakin ingin menghapus barang ini?'
       "
-      confirm-text="Hapus"
-      cancel-text="Batal"
+      :confirm-text="t('common_delete')"
+      :cancel-text="t('common_cancel')"
       variant="danger"
       @confirm="confirmDelete"
       @cancel="cancelDelete"
     />
   </div>
 </template>
+
+
+

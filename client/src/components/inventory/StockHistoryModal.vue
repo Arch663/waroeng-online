@@ -1,5 +1,6 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { useI18n } from "@/composables/useI18n";
 import { DATABASE_API_URL } from "@/config/api";
 import Pagination from "@/components/ui/Pagination.vue";
 
@@ -21,6 +22,12 @@ const sortBy = ref<
   "created_at" | "movement_type" | "quantity" | "stock_after" | "created_by_name"
 >("created_at");
 const order = ref<"ASC" | "DESC">("DESC");
+const { language, t } = useI18n();
+
+function sortArrow(isActive: boolean, sortOrder: "ASC" | "DESC") {
+  if (!isActive) return "↕";
+  return sortOrder === "ASC" ? "↑" : "↓";
+}
 
 const sortedMovements = computed(() => {
   const items = [...movements.value];
@@ -143,7 +150,7 @@ function handleSort(
         class="p-6 border-b border-border flex justify-between items-center bg-muted/5"
       >
         <div>
-          <h2 class="font-bold text-2xl">Riwayat Stok</h2>
+          <h2 class="font-bold text-2xl">{{ language === "id" ? "Riwayat Stok" : "Stock History" }}</h2>
           <p class="text-muted text-sm">{{ itemName }}</p>
         </div>
         <button
@@ -171,15 +178,15 @@ function handleSort(
           <div
             class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-accent border-r-transparent mb-4"
           ></div>
-          <p>Memuat riwayat...</p>
+          <p>{{ language === "id" ? "Memuat riwayat..." : "Loading history..." }}</p>
         </div>
 
         <div
           v-else-if="movements.length === 0"
           class="p-12 text-center text-muted"
         >
-          <p class="text-5xl mb-4">ðŸ“œ</p>
-          <p>Belum ada riwayat pergerakan stok untuk barang ini.</p>
+          <p class="text-5xl mb-4">📜</p>
+          <p>{{ language === "id" ? "Belum ada riwayat pergerakan stok untuk barang ini." : "No stock movement history for this item yet." }}</p>
         </div>
 
         <table v-else class="w-full text-left border-collapse">
@@ -189,41 +196,41 @@ function handleSort(
             <tr>
               <th class="px-6 py-4 cursor-pointer group" @click="handleSort('created_at')">
                 <div class="inline-flex items-center gap-1">
-                  Tanggal
+                  {{ language === "id" ? "Tanggal" : "Date" }}
                   <span :class="sortBy === 'created_at' ? 'text-accent' : 'opacity-50'">
-                    {{ sortBy === "created_at" && order === "ASC" ? "↑" : "↓" }}
+                    {{ sortArrow(sortBy === "created_at", order) }}
                   </span>
                 </div>
               </th>
               <th class="px-6 py-4 cursor-pointer group" @click="handleSort('movement_type')">
                 <div class="inline-flex items-center gap-1">
-                  Tipe
+                  {{ language === "id" ? "Tipe" : "Type" }}
                   <span :class="sortBy === 'movement_type' ? 'text-accent' : 'opacity-50'">
-                    {{ sortBy === "movement_type" && order === "ASC" ? "↑" : "↓" }}
+                    {{ sortArrow(sortBy === "movement_type", order) }}
                   </span>
                 </div>
               </th>
               <th class="px-6 py-4 text-right cursor-pointer group" @click="handleSort('quantity')">
                 <div class="inline-flex items-center gap-1">
-                  Jumlah
+                  {{ language === "id" ? "Jumlah" : "Quantity" }}
                   <span :class="sortBy === 'quantity' ? 'text-accent' : 'opacity-50'">
-                    {{ sortBy === "quantity" && order === "ASC" ? "↑" : "↓" }}
+                    {{ sortArrow(sortBy === "quantity", order) }}
                   </span>
                 </div>
               </th>
               <th class="px-6 py-4 text-right cursor-pointer group" @click="handleSort('stock_after')">
                 <div class="inline-flex items-center gap-1">
-                  Sisa Stok
+                  {{ language === "id" ? "Sisa Stok" : "Stock Left" }}
                   <span :class="sortBy === 'stock_after' ? 'text-accent' : 'opacity-50'">
-                    {{ sortBy === "stock_after" && order === "ASC" ? "↑" : "↓" }}
+                    {{ sortArrow(sortBy === "stock_after", order) }}
                   </span>
                 </div>
               </th>
               <th class="px-6 py-4 cursor-pointer group" @click="handleSort('created_by_name')">
                 <div class="inline-flex items-center gap-1">
-                  Oleh
+                  {{ language === "id" ? "Oleh" : "By" }}
                   <span :class="sortBy === 'created_by_name' ? 'text-accent' : 'opacity-50'">
-                    {{ sortBy === "created_by_name" && order === "ASC" ? "↑" : "↓" }}
+                    {{ sortArrow(sortBy === "created_by_name", order) }}
                   </span>
                 </div>
               </th>
@@ -278,7 +285,7 @@ function handleSort(
                 {{ m.stock_after }}
               </td>
               <td class="px-6 py-4 text-sm text-muted whitespace-nowrap">
-                {{ m.created_by_name || "System" }}
+                {{ m.created_by_name || (language === "id" ? "Sistem" : "System") }}
               </td>
             </tr>
           </tbody>
@@ -297,10 +304,14 @@ function handleSort(
           @click="emit('update:open', false)"
           class="px-6 py-2.5 bg-muted/10 hover:bg-muted/20 text-foreground font-semibold rounded-xl transition-all"
         >
-          Tutup
+          {{ t("common_close") }}
         </button>
       </div>
     </div>
   </div>
 </template>
+
+
+
+
 

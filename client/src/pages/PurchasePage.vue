@@ -1,5 +1,7 @@
-﻿<script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "@/composables/useI18n";
 import {
   getPurchases,
   createPurchase,
@@ -9,8 +11,12 @@ import {
 import { getSuppliers, type Supplier } from "@/services/supplierApi";
 import { getInventoryItems, type InventoryItem } from "@/services/inventoryApi";
 import PageTitle from "@/components/ui/PageTitle.vue";
+import PageActionButton from "@/components/ui/PageActionButton.vue";
 import Pagination from "@/components/ui/Pagination.vue";
 import TableCard from "@/components/ui/TableCard.vue";
+import FormModalShell from "@/components/ui/FormModalShell.vue";
+import SearchBar from "@/components/ui/SearchBar.vue";
+import DataTable from "@/components/ui/DataTable.vue";
 
 type PurchaseSortColumn =
   | "purchase_date"
@@ -20,6 +26,8 @@ type PurchaseSortColumn =
   | "cost_price"
   | "total_cost";
 
+const route = useRoute();
+const router = useRouter();
 const purchases = ref<Purchase[]>([]);
 const suppliers = ref<Supplier[]>([]);
 const products = ref<InventoryItem[]>([]);
@@ -27,8 +35,15 @@ const loading = ref(false);
 const showForm = ref(false);
 const sortBy = ref<PurchaseSortColumn>("purchase_date");
 const order = ref<"ASC" | "DESC">("DESC");
+const searchQuery = ref((route.query.q as string) || "");
 const currentPage = ref(1);
 const pageSize = 10;
+const { t, language } = useI18n();
+
+function sortArrow(isActive: boolean, sortOrder: "ASC" | "DESC") {
+  if (!isActive) return "↕";
+  return sortOrder === "ASC" ? "↑" : "↓";
+}
 
 const form = ref<PurchasePayload>({
   supplier_id: 0,
@@ -93,7 +108,18 @@ function handleSort(column: PurchaseSortColumn) {
 }
 
 const sortedPurchases = computed(() => {
-  const items = [...purchases.value];
+  const q = searchQuery.value.trim().toLowerCase();
+  const filtered = q
+    ? purchases.value.filter((p) => {
+        return (
+          String(p.product_name ?? "").toLowerCase().includes(q) ||
+          String(p.supplier_name ?? "").toLowerCase().includes(q) ||
+          String(p.notes ?? "").toLowerCase().includes(q)
+        );
+      })
+    : purchases.value;
+
+  const items = [...filtered];
   items.sort((a, b) => {
     const key = sortBy.value;
     const left = a[key];
@@ -133,73 +159,98 @@ function handlePageChange(page: number) {
   currentPage.value = page;
 }
 
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+watch(searchQuery, (newQ) => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    router.push({
+      query: {
+        ...route.query,
+        q: newQ || undefined,
+        page: 1,
+      },
+    });
+  }, 400);
+});
+
+watch(
+  () => route.query,
+  () => {
+    searchQuery.value = (route.query.q as string) || "";
+    currentPage.value = Number(route.query.page) || 1;
+  },
+  { deep: true },
+);
+
 onMounted(loadData);
 </script>
 
 <template>
-  <div class="space-y-10 pb-12 px-2 md:px-0">
+  <div class="space-y-8 md:space-y-10 pb-12 px-2 md:px-0">
     <PageTitle
-      title="Log"
-      highlight="Pembelian"
-      subtitle="Log_entry: stock acquisition protocol"
+      :title="t('purchase_title')"
+      :highlight="t('purchase_highlight')"
+      :subtitle="t('purchase_subtitle')"
     >
       <template #action>
-        <button
-          @click="handleAdd"
-          class="px-8 py-4 bg-accent text-background rounded-2xl font-black uppercase tracking-widest shadow-glass hover:shadow-accent/40 hover:-translate-y-1 transition-all active:scale-95 text-xs"
-        >
-          + Acquire New Units
-        </button>
+        <PageActionButton :label="t('purchase_add')" @click="handleAdd" />
       </template>
     </PageTitle>
 
+    <SearchBar
+      v-model="searchQuery"
+      :placeholder="language === 'id' ? 'Cari produk / supplier / catatan...' : 'Search product / supplier / notes...'"
+    />
+
     <div v-if="loading" class="text-center py-12 text-muted">
-      Memuat data...
+      {{ t("common_loading") }}
     </div>
 
     <TableCard
       v-else
-      wrapper-class="bg-surface rounded-3xl border border-border overflow-hidden"
+      wrapper-class="bg-surface rounded-2xl border border-border overflow-hidden"
     >
       <template #default>
-        <table class="w-full text-left">
-          <thead
-            class="bg-muted/10 text-xs uppercase tracking-wider font-bold text-muted"
-          >
+        <DataTable
+          :has-data="sortedPurchases.length > 0"
+          :columns="6"
+          :empty-text="language === 'id' ? 'Tidak ada riwayat pembelian.' : 'No purchase history.'"
+        >
+          <template #head>
             <tr>
               <th
                 class="px-6 py-4 text-foreground cursor-pointer group"
                 @click="handleSort('purchase_date')"
               >
                 <div class="flex items-center gap-1">
-                  Tanggal
+                  {{ language === "id" ? "Tanggal" : "Date" }}
                   <span
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
                     :class="sortBy === 'purchase_date' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "purchase_date" && order === "ASC" ? "↑" : "↓" }}
+                    {{ sortArrow(sortBy === "purchase_date", order) }}
                   </span>
                 </div>
               </th>
               <th class="px-6 py-4 cursor-pointer group" @click="handleSort('product_name')">
                 <div class="flex items-center gap-1">
-                  Produk
+                  {{ language === "id" ? "Produk" : "Product" }}
                   <span
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
                     :class="sortBy === 'product_name' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "product_name" && order === "ASC" ? "↑" : "↓" }}
+                    {{ sortArrow(sortBy === "product_name", order) }}
                   </span>
                 </div>
               </th>
               <th class="px-6 py-4 cursor-pointer group" @click="handleSort('supplier_name')">
                 <div class="flex items-center gap-1">
-                  Supplier
+                  {{ language === "id" ? "Supplier" : "Supplier" }}
                   <span
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
                     :class="sortBy === 'supplier_name' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "supplier_name" && order === "ASC" ? "↑" : "↓" }}
+                    {{ sortArrow(sortBy === "supplier_name", order) }}
                   </span>
                 </div>
               </th>
@@ -210,35 +261,35 @@ onMounted(loadData);
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
                     :class="sortBy === 'quantity' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "quantity" && order === "ASC" ? "↑" : "↓" }}
+                    {{ sortArrow(sortBy === "quantity", order) }}
                   </span>
                 </div>
               </th>
               <th class="px-6 py-4 text-right cursor-pointer group" @click="handleSort('cost_price')">
                 <div class="flex items-center justify-end gap-1">
-                  Harga Beli
+                  {{ language === "id" ? "Harga Beli" : "Cost Price" }}
                   <span
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
                     :class="sortBy === 'cost_price' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "cost_price" && order === "ASC" ? "↑" : "↓" }}
+                    {{ sortArrow(sortBy === "cost_price", order) }}
                   </span>
                 </div>
               </th>
               <th class="px-6 py-4 text-right cursor-pointer group" @click="handleSort('total_cost')">
                 <div class="flex items-center justify-end gap-1">
-                  Total
+                  {{ language === "id" ? "Total" : "Total" }}
                   <span
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
                     :class="sortBy === 'total_cost' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "total_cost" && order === "ASC" ? "↑" : "↓" }}
+                    {{ sortArrow(sortBy === "total_cost", order) }}
                   </span>
                 </div>
               </th>
             </tr>
-          </thead>
-          <tbody class="divide-y divide-border">
+          </template>
+          <template #body>
             <tr
               v-for="p in paginatedPurchases"
               :key="p.id"
@@ -287,13 +338,8 @@ onMounted(loadData);
                 }}
               </td>
             </tr>
-            <tr v-if="purchases.length === 0">
-              <td colspan="6" class="px-6 py-12 text-center text-muted">
-                Tidak ada riwayat pembelian.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          </template>
+        </DataTable>
       </template>
       <template #footer>
         <Pagination
@@ -305,39 +351,31 @@ onMounted(loadData);
     </TableCard>
 
     <!-- Purchase Form Modal -->
-    <div
-      v-if="showForm"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
-      @click.self="showForm = false"
-    >
-      <div
-        class="bg-surface rounded-3xl shadow-2xl w-full max-w-lg p-8 border border-border flex flex-col max-h-dvh"
-      >
-        <div class="overflow-y-auto overflow-x-hidden pr-1 space-y-5 scrollbar-thin scrollbar-thumb-accent/40 scrollbar-track-transparent">
-          <h2 class="text-2xl font-bold mb-1">Catat Pembelian Baru</h2>
+    <FormModalShell :open="showForm" max-width-class="max-w-lg" @close="showForm = false">
+          <h2 class="text-2xl font-bold mb-1">{{ language === "id" ? "Catat Pembelian Baru" : "Record New Purchase" }}</h2>
           <form @submit.prevent="handleSave" class="space-y-5">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-2">
-              <label class="text-sm font-medium text-muted">Produk *</label>
+              <label class="text-sm font-medium text-muted">{{ language === "id" ? "Produk *" : "Product *" }}</label>
               <select
                 v-model="form.inventory_id"
                 class="purchase-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
                 required
               >
-                <option :value="0" disabled>Pilih Produk</option>
+                <option :value="0" disabled>{{ language === "id" ? "Pilih Produk" : "Select Product" }}</option>
                 <option v-for="i in products" :key="i.id" :value="i.id">
                   {{ i.name }} (Stok: {{ i.stock }})
                 </option>
               </select>
             </div>
             <div class="space-y-2">
-              <label class="text-sm font-medium text-muted">Supplier *</label>
+              <label class="text-sm font-medium text-muted">{{ language === "id" ? "Supplier *" : "Supplier *" }}</label>
               <select
                 v-model="form.supplier_id"
                 class="purchase-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
                 required
               >
-                <option :value="0" disabled>Pilih Supplier</option>
+                <option :value="0" disabled>{{ language === "id" ? "Pilih Supplier" : "Select Supplier" }}</option>
                 <option v-for="s in suppliers" :key="s.id" :value="s.id">
                   {{ s.name }}
                 </option>
@@ -347,7 +385,7 @@ onMounted(loadData);
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-2">
-              <label class="text-sm font-medium text-muted">Jumlah *</label>
+              <label class="text-sm font-medium text-muted">{{ language === "id" ? "Jumlah *" : "Quantity *" }}</label>
               <input
                 v-model.number="form.quantity"
                 type="number"
@@ -358,7 +396,7 @@ onMounted(loadData);
             </div>
             <div class="space-y-2">
               <label class="text-sm font-medium text-muted"
-                >Harga Beli Per Unit *</label
+                >{{ language === "id" ? "Harga Beli Per Unit *" : "Cost Per Unit *" }}</label
               >
               <input
                 v-model.number="form.cost_price"
@@ -371,17 +409,17 @@ onMounted(loadData);
           </div>
 
           <div class="space-y-2">
-            <label class="text-sm font-medium text-muted">Catatan</label>
+            <label class="text-sm font-medium text-muted">{{ language === "id" ? "Catatan" : "Notes" }}</label>
             <textarea
               v-model="form.notes"
               class="purchase-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset h-20 resize-none placeholder:text-muted/60"
-              placeholder="Contoh: Pembelian stok Sembako bulanan"
+              :placeholder="language === 'id' ? 'Contoh: Pembelian stok Sembako bulanan' : 'Example: Monthly stock purchase'"
             ></textarea>
           </div>
 
           <div class="p-4 bg-accent/5 rounded-2xl border border-accent/10">
             <div class="flex justify-between items-center text-sm">
-              <span class="text-muted">Total Pengeluaran:</span>
+              <span class="text-muted">{{ language === "id" ? "Total Pengeluaran:" : "Total Expense:" }}</span>
               <span class="text-xl font-bold text-accent"
                 >Rp
                 {{
@@ -403,19 +441,17 @@ onMounted(loadData);
               @click="showForm = false"
               class="flex-1 py-4 bg-muted/10 text-foreground rounded-2xl font-bold"
             >
-              Batal
+              {{ t("common_cancel") }}
             </button>
             <button
               type="submit"
               class="flex-1 py-4 bg-accent text-white rounded-2xl font-bold shadow-lg shadow-accent/20"
             >
-              Simpan Pembelian
+              {{ t("common_save") }}
             </button>
           </div>
           </form>
-        </div>
-      </div>
-    </div>
+    </FormModalShell>
   </div>
 </template>
 
@@ -437,4 +473,8 @@ onMounted(loadData);
   transition: background-color 9999s ease-in-out 0s;
 }
 </style>
+
+
+
+
 

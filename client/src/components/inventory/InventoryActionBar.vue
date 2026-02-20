@@ -1,57 +1,34 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import PageTitle from "@/components/ui/PageTitle.vue";
+import PageActionButton from "@/components/ui/PageActionButton.vue";
+import SearchBar from "@/components/ui/SearchBar.vue";
+import { useI18n } from "@/composables/useI18n";
 
 defineProps<{
   searchQuery: string;
 }>();
 
 defineEmits(["add", "search"]);
+
+const { t } = useI18n();
 </script>
 
 <template>
   <div class="space-y-8">
     <PageTitle
-      title="Inventori"
-      highlight="Barang"
-      subtitle="Unit-00: stock management system"
+      :title="t('inventory_title')"
+      :highlight="t('inventory_highlight')"
+      :subtitle="t('inventory_subtitle')"
     >
       <template #action>
-        <button
-          @click="$emit('add')"
-          class="px-6 py-4 bg-accent/90 text-white rounded-2xl font-black uppercase tracking-widest hover:-translate-y-1 transition-all active:scale-95 text-xs md:text-sm"
-        >
-          + Tambah Barang
-        </button>
+        <PageActionButton :label="t('inventory_add')" @click="$emit('add')" />
       </template>
     </PageTitle>
 
-    <!-- Search Bar -->
-    <div class="relative group">
-      <div
-        class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-muted transition-colors group-focus-within:text-accent"
-      >
-        <svg
-          class="w-5 h-5 opacity-50"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
-      </div>
-      <input
-        :value="searchQuery"
-        type="text"
-        placeholder="INPUT SKU ATAU NAMA..."
-        class="w-full bg-surface/40 backdrop-blur-2xl border border-border rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:ring-4 focus:ring-accent/10 focus:border-accent transition-all placeholder:text-muted/40 placeholder:font-black placeholder:text-xs placeholder:tracking-widest"
-        @input="$emit('search', ($event.target as HTMLInputElement).value)"
-      />
-    </div>
+    <SearchBar
+      :model-value="searchQuery"
+      :placeholder="t('inventory_search')"
+      @update:model-value="$emit('search', $event)"
+    />
   </div>
 </template>
-

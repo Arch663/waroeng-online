@@ -1,11 +1,13 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
+import { useI18n } from "@/composables/useI18n";
 import { getReportsSummary, type ReportSummary } from "@/services/dashboardApi";
 import { getInventoryItems } from "@/services/inventoryApi";
 import Skeleton from "@/components/ui/Skeleton.vue";
 import PageTitle from "@/components/ui/PageTitle.vue";
 import Pagination from "@/components/ui/Pagination.vue";
 import TableCard from "@/components/ui/TableCard.vue";
+import DataTable from "@/components/ui/DataTable.vue";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -24,9 +26,12 @@ const categorySortBy = ref<CategorySortColumn>("revenue");
 const categoryOrder = ref<"ASC" | "DESC">("DESC");
 const topProductSortBy = ref<TopProductSortColumn>("total_revenue");
 const topProductOrder = ref<"ASC" | "DESC">("DESC");
+const { language, t } = useI18n();
 
 const categories = computed(() => summary.value?.categories ?? []);
 const topProducts = computed(() => summary.value?.topProducts ?? []);
+const hasCategoryData = computed(() => categories.value.length > 0);
+const hasTopProductData = computed(() => topProducts.value.length > 0);
 
 function sortText(left: string, right: string, order: "ASC" | "DESC") {
   return order === "ASC"
@@ -36,6 +41,11 @@ function sortText(left: string, right: string, order: "ASC" | "DESC") {
 
 function sortNumber(left: number, right: number, order: "ASC" | "DESC") {
   return order === "ASC" ? left - right : right - left;
+}
+
+function sortArrow(isActive: boolean, order: "ASC" | "DESC") {
+  if (!isActive) return "↕";
+  return order === "ASC" ? "↑" : "↓";
 }
 
 const sortedCategories = computed(() => {
@@ -227,27 +237,27 @@ onMounted(loadReport);
 <template>
   <div class="space-y-10 pb-12 px-2 md:px-0">
     <PageTitle
-      title="Laporan"
-      highlight="Bisnis"
-      subtitle="Documents: sales profit intelligence"
+      :title="language === 'id' ? 'Laporan' : 'Reports'"
+      :highlight="language === 'id' ? 'Bisnis' : 'Business'"
+      :subtitle="language === 'id' ? 'Dokumen: ringkasan penjualan dan laba' : 'Documents: sales and profit summary'"
     >
       <template #action>
         <div class="flex flex-col sm:flex-row items-center gap-4">
           <div
-            class="flex bg-surface/30 backdrop-blur-2xl p-1.5 rounded-2xl border border-border/50"
+            class="flex bg-surface p-1.5 rounded-2xl border border-border/50"
           >
             <button
               v-for="p in [
-                { id: 'day', l: 'Today' },
-                { id: 'week', l: 'Week' },
-                { id: 'month', l: 'Month' },
-                { id: 'year', l: 'Year' },
+                { id: 'day', l: t('reports_period_day') },
+                { id: 'week', l: t('reports_period_week') },
+                { id: 'month', l: t('reports_period_month') },
+                { id: 'year', l: t('reports_period_year') },
               ]"
               :key="p.id"
               @click="period = p.id"
               :disabled="loading"
               :class="[
-                'px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all',
+                'px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all',
                 period === p.id
                   ? 'bg-accent text-background'
                   : 'text-muted hover:text-foreground hover:bg-accent/5',
@@ -260,7 +270,7 @@ onMounted(loadReport);
           <button
             @click="handleDownloadPDF"
             :disabled="loading || !summary"
-            class="w-full sm:w-auto px-8 py-3.5 bg-foreground text-background rounded-2xl font-black uppercase tracking-widest hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 text-xs"
+            class="w-full sm:w-auto px-8 py-3.5 bg-foreground text-background rounded-2xl font-semibold tracking-wide transition-colors disabled:opacity-50 flex items-center justify-center gap-3 text-xs"
           >
             <svg
               class="w-4 h-4"
@@ -275,7 +285,7 @@ onMounted(loadReport);
                 d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            Export PDF
+            {{ t("reports_export_pdf") }}
           </button>
         </div>
       </template>
@@ -290,10 +300,10 @@ onMounted(loadReport);
 
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       <div
-        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border group hover:border-accent/30 transition-all duration-300"
+        class="bg-surface p-8 rounded-2xl border border-border group hover:border-accent/30 transition-all duration-300"
       >
         <p class="text-xs font-black text-muted uppercase tracking-widest mb-2">
-          Total Transaksi
+          {{ t("reports_total_transactions") }}
         </p>
         <h3 class="text-4xl font-black text-foreground">
           {{ summary?.sales.total_sales || 0 }}
@@ -301,15 +311,16 @@ onMounted(loadReport);
         <div
           class="mt-4 flex items-center gap-2 text-xs text-accent font-black bg-accent/10 px-2 py-1 rounded-full w-fit uppercase"
         >
-          <span>↑</span> Healthy
+          <span>•</span>
+          {{ language === "id" ? "Stabil" : "Healthy" }}
         </div>
       </div>
 
       <div
-        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border border-l-4 border-l-secondary group hover:border-accent/40 transition-all duration-300"
+        class="bg-surface p-8 rounded-2xl border border-border border-l-4 border-l-secondary group hover:border-accent/40 transition-all duration-300"
       >
         <p class="text-xs font-black text-muted uppercase tracking-widest mb-2">
-          Omzet Kotor
+          {{ t("reports_gross_revenue") }}
         </p>
         <h3 class="text-3xl font-black text-foreground">
           <span class="text-sm font-medium mr-1 text-foreground/60">Rp</span>
@@ -318,15 +329,15 @@ onMounted(loadReport);
           }}
         </h3>
         <p class="text-xs text-muted mt-4 font-bold uppercase tracking-tight">
-          Total pendapatan
+          {{ t("reports_total_revenue_note") }}
         </p>
       </div>
 
       <div
-        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border border-l-4 border-l-foreground group hover:border-accent/40 transition-all duration-300"
+        class="bg-surface p-8 rounded-2xl border border-border border-l-4 border-l-foreground group hover:border-accent/40 transition-all duration-300"
       >
         <p class="text-xs font-black text-muted uppercase tracking-widest mb-2">
-          Pengeluaran (Stok)
+          {{ t("reports_expenses") }}
         </p>
         <h3 class="text-3xl font-black text-foreground">
           <span class="text-sm font-medium mr-1 text-foreground/60">Rp</span>
@@ -337,22 +348,22 @@ onMounted(loadReport);
           }}
         </h3>
         <p class="text-xs text-muted mt-4 font-bold uppercase tracking-tight">
-          Total pembelian barang
+          {{ t("reports_total_purchase_note") }}
         </p>
       </div>
 
       <div
-        class="bg-surface/60 backdrop-blur-xl p-8 rounded-3xl border border-border border-l-4 border-l-accent group hover:border-accent/40 transition-all duration-300"
+        class="bg-surface p-8 rounded-2xl border border-border border-l-4 border-l-accent group hover:border-accent/40 transition-all duration-300"
       >
         <p class="text-xs font-black text-muted uppercase tracking-widest mb-2">
-          Profit Bersih
+          {{ t("reports_net_profit") }}
         </p>
         <h3 class="text-3xl font-black text-accent">
           <span class="text-sm font-medium mr-1 text-accent/60">Rp</span>
           {{ (Number(summary?.sales?.profit) || 0).toLocaleString("id-ID") }}
         </h3>
         <p class="text-xs text-muted mt-4 font-medium italic opacity-60">
-          * Omzet - Pengeluaran
+          {{ t("reports_profit_formula_note") }}
         </p>
       </div>
     </div>
@@ -360,19 +371,19 @@ onMounted(loadReport);
     <div class="grid lg:grid-cols-2 gap-6">
       <div
         v-if="loading && !summary"
-        class="bg-surface/60 backdrop-blur-xl rounded-3xl p-6 h-96 border border-border"
+        class="bg-surface rounded-2xl p-6 h-96 border border-border"
       >
         <Skeleton height="30px" width="50%" className="mb-6" />
         <Skeleton v-for="i in 5" :key="i" height="40px" className="mb-3" />
       </div>
 
       <TableCard
-        v-else
-        wrapper-class="bg-surface/60 backdrop-blur-xl rounded-3xl border border-border overflow-hidden"
+        v-else-if="hasCategoryData"
+        wrapper-class="bg-surface rounded-2xl border border-border overflow-hidden"
         table-wrapper-class="overflow-x-auto"
       >
         <template #header>
-          <h2 class="font-bold text-lg">Performa Kategori</h2>
+          <h2 class="font-bold text-lg">{{ t("reports_category_performance") }}</h2>
           <span
             class="text-xs bg-muted/20 px-2 py-1 rounded-lg font-black text-muted uppercase tracking-widest"
           >
@@ -380,27 +391,24 @@ onMounted(loadReport);
           </span>
         </template>
         <template #default>
-          <table class="w-full text-left">
-            <thead
-              class="bg-surface text-xs uppercase font-black text-muted tracking-widest"
-            >
+          <DataTable
+            :has-data="hasCategoryData"
+            :columns="3"
+            :empty-text="t('reports_no_data')"
+            table-class="w-full text-left"
+            thead-class="bg-surface text-xs uppercase font-black text-muted tracking-widest"
+            tbody-class="divide-y divide-border"
+          >
+            <template #head>
               <tr>
                 <th
                   class="px-6 py-4 cursor-pointer"
                   @click="handleCategorySort('name')"
                 >
-                  <span class="inline-flex items-center gap-1"
-                    >Kategori
-                    <span
-                      :class="
-                        categorySortBy === 'name' ? 'text-accent' : 'opacity-50'
-                      "
-                    >
-                      {{
-                        categorySortBy === "name" && categoryOrder === "ASC"
-                          ? "↑"
-                          : "↓"
-                      }}
+                  <span class="inline-flex items-center gap-1">
+                    {{ t("reports_col_category") }}
+                    <span :class="categorySortBy === 'name' ? 'text-accent' : 'opacity-50'">
+                      {{ sortArrow(categorySortBy === "name", categoryOrder) }}
                     </span>
                   </span>
                 </th>
@@ -408,21 +416,10 @@ onMounted(loadReport);
                   class="px-6 py-4 text-center cursor-pointer"
                   @click="handleCategorySort('units_sold')"
                 >
-                  <span class="inline-flex items-center gap-1"
-                    >Unit Terjual
-                    <span
-                      :class="
-                        categorySortBy === 'units_sold'
-                          ? 'text-accent'
-                          : 'opacity-50'
-                      "
-                    >
-                      {{
-                        categorySortBy === "units_sold" &&
-                        categoryOrder === "ASC"
-                          ? "↑"
-                          : "↓"
-                      }}
+                  <span class="inline-flex items-center gap-1">
+                    {{ t("reports_col_sold_units") }}
+                    <span :class="categorySortBy === 'units_sold' ? 'text-accent' : 'opacity-50'">
+                      {{ sortArrow(categorySortBy === "units_sold", categoryOrder) }}
                     </span>
                   </span>
                 </th>
@@ -430,26 +427,16 @@ onMounted(loadReport);
                   class="px-6 py-4 text-right cursor-pointer"
                   @click="handleCategorySort('revenue')"
                 >
-                  <span class="inline-flex items-center gap-1"
-                    >Revenue
-                    <span
-                      :class="
-                        categorySortBy === 'revenue'
-                          ? 'text-accent'
-                          : 'opacity-50'
-                      "
-                    >
-                      {{
-                        categorySortBy === "revenue" && categoryOrder === "ASC"
-                          ? "↑"
-                          : "↓"
-                      }}
+                  <span class="inline-flex items-center gap-1">
+                    {{ t("reports_col_revenue") }}
+                    <span :class="categorySortBy === 'revenue' ? 'text-accent' : 'opacity-50'">
+                      {{ sortArrow(categorySortBy === "revenue", categoryOrder) }}
                     </span>
                   </span>
                 </th>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-border">
+            </template>
+            <template #body>
               <tr
                 v-for="c in paginatedCategories"
                 :key="c.name"
@@ -461,9 +448,7 @@ onMounted(loadReport);
                 <td class="px-6 py-4 text-center text-sm font-medium">
                   {{ c.units_sold }}
                 </td>
-                <td
-                  class="px-6 py-4 text-right tabular-nums font-black text-accent text-sm"
-                >
+                <td class="px-6 py-4 text-right tabular-nums font-black text-accent text-sm">
                   Rp
                   {{
                     Number(c.revenue || 0).toLocaleString("id-ID", {
@@ -473,8 +458,8 @@ onMounted(loadReport);
                   }}
                 </td>
               </tr>
-            </tbody>
-          </table>
+            </template>
+          </DataTable>
         </template>
         <template #footer>
           <Pagination
@@ -487,19 +472,19 @@ onMounted(loadReport);
 
       <div
         v-if="loading && !summary"
-        class="bg-surface/60 backdrop-blur-xl rounded-2xl p-6 h-96 border border-border"
+        class="bg-surface rounded-2xl p-6 h-96 border border-border"
       >
         <Skeleton height="30px" width="50%" className="mb-6" />
         <Skeleton v-for="i in 5" :key="i" height="40px" className="mb-3" />
       </div>
 
       <TableCard
-        v-else
-        wrapper-class="bg-surface/60 backdrop-blur-xl rounded-3xl border border-border overflow-hidden"
+        v-else-if="hasTopProductData"
+        wrapper-class="bg-surface rounded-2xl border border-border overflow-hidden"
         table-wrapper-class="overflow-x-auto"
       >
         <template #header>
-          <h2 class="font-bold text-lg">Product Terlaris</h2>
+          <h2 class="font-bold text-lg">{{ t("reports_top_products") }}</h2>
           <span
             class="text-xs bg-muted/20 px-2 py-1 rounded-lg font-black text-muted uppercase tracking-widest"
           >
@@ -507,84 +492,52 @@ onMounted(loadReport);
           </span>
         </template>
         <template #default>
-          <table class="w-full text-left table-fixed">
-            <thead
-              class="bg-surface text-xs uppercase font-black text-muted tracking-widest"
-            >
+          <DataTable
+            :has-data="hasTopProductData"
+            :columns="3"
+            :empty-text="t('reports_no_data')"
+            table-class="w-full text-left table-fixed"
+            thead-class="bg-surface text-xs uppercase font-black text-muted tracking-widest"
+            tbody-class="block min-h-67 max-h-80 overflow-y-auto divide-y divide-border"
+          >
+            <template #head>
               <tr class="table w-full table-fixed">
                 <th
                   class="px-6 py-4 w-1/2 cursor-pointer"
                   @click="handleTopProductSort('name')"
                 >
                   <span class="inline-flex items-center gap-1">
-                    Produk
-                    <span
-                      :class="
-                        topProductSortBy === 'name'
-                          ? 'text-accent'
-                          : 'opacity-50'
-                      "
-                    >
-                      {{
-                        topProductSortBy === "name" && topProductOrder === "ASC"
-                          ? "↑"
-                          : "↓"
-                      }}
+                    {{ t("reports_col_product") }}
+                    <span :class="topProductSortBy === 'name' ? 'text-accent' : 'opacity-50'">
+                      {{ sortArrow(topProductSortBy === "name", topProductOrder) }}
                     </span>
                   </span>
                 </th>
-
                 <th
                   class="px-6 py-4 w-1/4 text-center cursor-pointer"
                   @click="handleTopProductSort('total_qty')"
                 >
                   <span class="inline-flex items-center gap-1">
-                    Qty
-                    <span
-                      :class="
-                        topProductSortBy === 'total_qty'
-                          ? 'text-accent'
-                          : 'opacity-50'
-                      "
-                    >
-                      {{
-                        topProductSortBy === "total_qty" &&
-                        topProductOrder === "ASC"
-                          ? "↑"
-                          : "↓"
-                      }}
+                    {{ t("reports_col_qty") }}
+                    <span :class="topProductSortBy === 'total_qty' ? 'text-accent' : 'opacity-50'">
+                      {{ sortArrow(topProductSortBy === "total_qty", topProductOrder) }}
                     </span>
                   </span>
                 </th>
-
                 <th
                   class="px-6 py-4 w-1/4 text-right cursor-pointer"
                   @click="handleTopProductSort('total_revenue')"
                 >
                   <span class="inline-flex items-center gap-1">
-                    Revenue
-                    <span
-                      :class="
-                        topProductSortBy === 'total_revenue'
-                          ? 'text-accent'
-                          : 'opacity-50'
-                      "
-                    >
-                      {{
-                        topProductSortBy === "total_revenue" &&
-                        topProductOrder === "ASC"
-                          ? "↑"
-                          : "↓"
-                      }}
+                    {{ t("reports_col_revenue") }}
+                    <span :class="topProductSortBy === 'total_revenue' ? 'text-accent' : 'opacity-50'">
+                      {{ sortArrow(topProductSortBy === "total_revenue", topProductOrder) }}
                     </span>
                   </span>
                 </th>
               </tr>
-            </thead>
-
-            <tbody
-              class="block min-h-67 max-h-80 overflow-y-auto divide-y divide-border"
-            >
+            </template>
+            <template #body>
               <tr
                 v-for="p in paginatedTopProducts"
                 :key="p.name"
@@ -595,18 +548,12 @@ onMounted(loadReport);
                     {{ p.name }}
                   </div>
                 </td>
-
                 <td class="px-6 py-4 w-1/4 text-center">
-                  <span
-                    class="px-2 py-1 bg-accent/10 text-accent rounded-lg text-xs font-black"
-                  >
+                  <span class="px-2 py-1 bg-accent/10 text-accent rounded-lg text-xs font-black">
                     {{ p.total_qty }}
                   </span>
                 </td>
-
-                <td
-                  class="px-6 py-4 w-1/4 text-right tabular-nums font-bold text-sm"
-                >
+                <td class="px-6 py-4 w-1/4 text-right tabular-nums font-bold text-sm">
                   Rp
                   {{
                     Number(p.total_revenue || 0).toLocaleString("id-ID", {
@@ -616,8 +563,8 @@ onMounted(loadReport);
                   }}
                 </td>
               </tr>
-            </tbody>
-          </table>
+            </template>
+          </DataTable>
         </template>
 
         <template #footer>
@@ -635,10 +582,15 @@ onMounted(loadReport);
       class="py-20 text-center text-muted"
     >
       <p class="text-6xl mb-4 grayscale opacity-50">Data</p>
-      <p class="font-medium text-lg">Tidak ada data untuk periode ini.</p>
+      <p class="font-medium text-lg">{{ t("reports_no_data") }}</p>
       <p class="text-sm opacity-60">
-        Silakan pilih periode lain atau pastikan ada transaksi yang tercatat.
+        {{ t("reports_choose_period") }}
       </p>
     </div>
   </div>
 </template>
+
+
+
+
+

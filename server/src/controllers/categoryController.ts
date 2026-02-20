@@ -1,6 +1,6 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../middleware/authMiddleware";
-import { pool } from "../db";
+import { db } from "../db";
 
 export const getCategories = async (
     _req: AuthRequest,
@@ -8,10 +8,12 @@ export const getCategories = async (
     next: NextFunction,
 ) => {
     try {
-        const result = await pool.query(
-            "SELECT id, name, description FROM categories ORDER BY name ASC",
-        );
-        res.json(result.rows);
+        const result = await db
+            .collection("categories")
+            .find({}, { projection: { _id: 0, id: 1, name: 1, description: 1 } })
+            .sort({ name: 1 })
+            .toArray();
+        res.json(result);
     } catch (error) {
         next(error);
     }

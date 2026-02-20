@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "@/composables/useI18n";
 import Skeleton from "@/components/ui/Skeleton.vue";
 
 const props = defineProps<{
@@ -17,6 +18,7 @@ const props = defineProps<{
   };
   loading?: boolean;
 }>();
+const { t } = useI18n();
 
 type StatIcon =
   | "money"
@@ -32,67 +34,67 @@ type StatIcon =
 
 const cards = computed(() => [
   {
-    label: "Omzet Hari Ini",
+    label: t("dashboard_stat_today_revenue"),
     value: Number(props.stats.omzetToday).toLocaleString("id-ID"),
     color: "text-accent",
     icon: "money" as StatIcon,
     prefix: "Rp",
   },
   {
-    label: "Transaksi Hari Ini",
+    label: t("dashboard_stat_today_transaction"),
     value: props.stats.transaksiToday,
     color: "text-secondary",
     icon: "transaction" as StatIcon,
   },
   {
-    label: "Laba Hari Ini",
+    label: t("dashboard_stat_today_profit"),
     value: Number(props.stats.profitToday || 0).toLocaleString("id-ID"),
     color: "text-accent",
     icon: "profit" as StatIcon,
     prefix: "Rp",
   },
   {
-    label: "Beli Stok (Hari)",
+    label: t("dashboard_stat_today_purchase"),
     value: Number(props.stats.purchasesToday || 0).toLocaleString("id-ID"),
     color: "text-accent",
     icon: "purchase" as StatIcon,
     prefix: "Rp",
   },
   {
-    label: "Unit Terjual (Hari)",
+    label: t("dashboard_stat_today_units"),
     value: props.stats.productsSoldToday,
     color: "text-secondary",
     icon: "sold" as StatIcon,
   },
   {
-    label: "Omzet Bulan Ini",
+    label: t("dashboard_stat_month_revenue"),
     value: Number(props.stats.omzetMonth).toLocaleString("id-ID"),
     color: "text-accent",
     icon: "monthRevenue" as StatIcon,
     prefix: "Rp",
   },
   {
-    label: "Laba Bulan Ini",
+    label: t("dashboard_stat_month_profit"),
     value: Number(props.stats.profitMonth || 0).toLocaleString("id-ID"),
     color: "text-accent",
     icon: "monthProfit" as StatIcon,
     prefix: "Rp",
   },
   {
-    label: "Beli Stok (Bulan)",
+    label: t("dashboard_stat_month_purchase"),
     value: Number(props.stats.purchasesMonth || 0).toLocaleString("id-ID"),
     color: "text-accent",
     icon: "delivery" as StatIcon,
     prefix: "Rp",
   },
   {
-    label: "Transaksi (Bulan)",
+    label: t("dashboard_stat_month_transaction"),
     value: props.stats.transaksiMonth,
     color: "text-secondary",
     icon: "analytics" as StatIcon,
   },
   {
-    label: "Alert: Low Stock",
+    label: t("dashboard_stat_low_stock"),
     value: props.stats.lowStockCount,
     color: props.stats.lowStockCount > 0 ? "text-secondary" : "text-secondary/40",
     icon: "alert" as StatIcon,
@@ -119,13 +121,13 @@ const iconPaths: Record<StatIcon, string[]> = {
       <div
         v-for="card in cards"
         :key="card.label"
-        class="bg-surface/30 backdrop-blur-2xl rounded-2xl p-6 border border-border/50 group hover:border-accent/40 transition-all duration-300 hover:-translate-y-1"
+        class="bg-surface rounded-xl p-4 border border-border group transition-colors"
       >
-        <div class="flex items-center justify-between mb-4">
-          <p class="text-xs uppercase tracking-widest font-black text-muted/50">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-[11px] uppercase tracking-wide font-semibold text-muted">
             {{ card.label }}
           </p>
-          <div class="w-8 h-8 rounded-xl bg-accent/10 text-accent flex items-center justify-center border border-accent/20 transition-all group-hover:bg-accent group-hover:text-background group-hover:scale-110">
+          <div class="w-8 h-8 rounded-lg bg-accent/10 text-accent flex items-center justify-center border border-accent/20">
             <svg
               class="w-4 h-4"
               viewBox="0 0 24 24"
@@ -143,10 +145,10 @@ const iconPaths: Record<StatIcon, string[]> = {
           <Skeleton height="20px" width="60%" borderRadius="4px" />
         </div>
         <div v-else class="flex items-baseline gap-1 min-w-0">
-          <span v-if="card.prefix" class="text-xs font-bold text-muted uppercase">{{ card.prefix }}</span>
+          <span v-if="card.prefix" class="text-xs font-medium text-muted uppercase">{{ card.prefix }}</span>
           <h3
             :class="[
-              'text-lg font-black tabular-nums transition-colors tracking-tighter truncate',
+              'text-lg font-semibold tabular-nums truncate',
               card.color,
             ]"
           >

@@ -2,9 +2,11 @@
 import { ref } from "vue";
 import ConfirmModal from "@/components/ui/ConfirmModal.vue";
 import { useCartStore } from "@/stores/useCartStore";
+import { useI18n } from "@/composables/useI18n";
 
 const cart = useCartStore();
 const pendingDeleteId = ref<number | null>(null);
+const { t } = useI18n();
 
 const update = (id: number, val: number, stock: number) => {
   if (val < 1) return;
@@ -30,7 +32,7 @@ const cancelRemove = () => {
   <div
     class="overflow-y-auto max-h-65 bg-surface rounded-2xl p-4 scrollbar scrollbar-thumb-foreground scrollbar-track-border scrollbar-hover:scrollbar-thumb-surface"
   >
-    <h2 class="font-semibold text-foreground mb-4">Pesanan Baru</h2>
+    <h2 class="font-semibold text-foreground mb-4">{{ t('cart_new_order') }}</h2>
     <div
       v-for="item in cart.items"
       :key="item.id"
@@ -89,7 +91,7 @@ const cancelRemove = () => {
         <button
           @click="askRemove(item.id)"
           class="inline-flex items-center justify-center w-9 h-9 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-red-500/20"
-          title="Hapus item"
+          :title="t('cart_remove_item')"
         >
           <svg
             class="h-4 w-4"
@@ -111,10 +113,10 @@ const cancelRemove = () => {
 
   <ConfirmModal
     :open="pendingDeleteId !== null"
-    title="Hapus Item"
-    message="Yakin ingin menghapus item ini dari keranjang?"
-    confirm-text="Hapus"
-    cancel-text="Batal"
+    :title="t('cart_confirm_remove_title')"
+    :message="t('cart_confirm_remove_message')"
+    :confirm-text="t('common_delete')"
+    :cancel-text="t('common_cancel')"
     variant="danger"
     @confirm="confirmRemove"
     @cancel="cancelRemove"

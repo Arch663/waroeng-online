@@ -1,11 +1,14 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import type { Product } from "@/types/product";
+import { useI18n } from "@/composables/useI18n";
 
 defineProps<{
   product: Product;
 }>();
 
 defineEmits(["add"]);
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -41,7 +44,9 @@ defineEmits(["add"]);
         }}
       </p>
 
-      <p class="text-xs text-muted">Stok: {{ product.stock }}</p>
+      <p class="text-xs text-muted">{{ t('common_stock') }}: {{ product.stock }}</p>
     </div>
   </div>
 </template>
+
+

@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Chart } from "chart.js/auto";
+import { useI18n } from "@/composables/useI18n";
 
 const props = defineProps<{
   sales: Array<{ day?: string; revenue: number }>;
@@ -9,6 +10,7 @@ const props = defineProps<{
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 let chart: Chart | null = null;
+const { t } = useI18n();
 
 function getChartColors() {
   const css = getComputedStyle(document.documentElement);
@@ -38,7 +40,7 @@ function draw() {
       labels,
       datasets: [
         {
-          label: "Revenue",
+          label: t("dashboard_chart_revenue"),
           data: salesData,
           backgroundColor: c.accent + "33",
           hoverBackgroundColor: c.accent,
@@ -49,7 +51,7 @@ function draw() {
           barPercentage: 0.5,
         },
         {
-          label: "Stock Out",
+          label: t("dashboard_chart_stock_out"),
           data: purchaseData,
           backgroundColor: c.accent + "55",
           hoverBackgroundColor: c.accent,
@@ -133,8 +135,8 @@ onBeforeUnmount(() => {
   <div class="p-8 h-80 flex flex-col">
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h3 class="text-xs font-black text-muted uppercase tracking-widest mb-2">Financial Flow</h3>
-        <h2 class="text-2xl font-black text-foreground uppercase tracking-tight">Revenue vs Stok</h2>
+        <h3 class="text-xs font-black text-muted uppercase tracking-widest mb-2">{{ t("dashboard_chart_financial_flow") }}</h3>
+        <h2 class="text-2xl font-black text-foreground uppercase tracking-tight">{{ t("dashboard_chart_revenue_vs_stock") }}</h2>
       </div>
       <div class="w-10 h-10 flex items-center justify-center bg-accent/10 text-accent rounded-xl">
         <svg

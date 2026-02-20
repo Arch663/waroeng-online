@@ -1,7 +1,16 @@
-
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../middleware/authMiddleware";
-import { pool } from "../db";
+import { db } from "../db";
+
+function getFromDate(period: unknown) {
+    const now = new Date();
+    const from = new Date(now);
+    if (period === "day") from.setDate(from.getDate() - 1);
+    else if (period === "week") from.setDate(from.getDate() - 7);
+    else if (period === "year") from.setFullYear(from.getFullYear() - 1);
+    else from.setMonth(from.getMonth() - 1);
+    return from;
+}
 
 export const getReportSummary = async (
     req: AuthRequest,
@@ -9,66 +18,50 @@ export const getReportSummary = async (
     next: NextFunction,
 ) => {
     try {
-        const { period } = req.query;
-        let interval = "1 month";
-        if (period === "day") interval = "1 day";
-        if (period === "week") interval = "1 week";
-        if (period === "year") interval = "1 year";
-
-        const [
-            salesStatsResult,
-            categoryStats,
-            topPerformers,
-            expenseStatsResult,
-        ] = await Promise.all([
-            pool.query(`
-      SELECT 
-        COUNT(*)::integer as total_sales,
-        COALESCE(SUM(total), 0)::numeric as gross_revenue
-      FROM sales
-      WHERE created_at >= CURRENT_DATE - INTERVAL '${interval}'
-    `),
-            pool.query(`
-      SELECT c.name, SUM(si.qty)::integer as units_sold, SUM(si.subtotal)::numeric as revenue
-      FROM sale_items si
-      JOIN inventory i ON si.inventory_id = i.id
-      LEFT JOIN categories c ON i.category_id = c.id
-      JOIN sales s ON si.sale_id = s.id
-      WHERE s.created_at >= CURRENT_DATE - INTERVAL '${interval}'
-      GROUP BY c.name
-      ORDER BY revenue DESC
-    `),
-            pool.query(`
-      SELECT name, SUM(qty)::integer as total_qty, SUM(subtotal)::numeric as total_revenue
-      FROM sale_items si
-      JOIN sales s ON si.sale_id = s.id
-      WHERE s.created_at >= CURRENT_DATE - INTERVAL '${interval}'
-      GROUP BY name
-      ORDER BY total_qty DESC
-      LIMIT 10
-    `),
-            pool.query(`
-      SELECT COALESCE(SUM(total_cost), 0)::numeric as total_expenses
-      FROM purchases
-      WHERE purchase_date >= CURRENT_DATE - INTERVAL '${interval}'
-    `),
+        const fromDate = getFromDate(req.query.period);
+        const [sales, saleItems, purchases, inventory] = await Promise.all([
+            db.collection("sales").find({ created_at: { $gte: fromDate } }).toArray(),
+            db.collection("sale_items").find({}).toArray(),
+            db.collection("purchases").find({ purchase_date: { $gte: fromDate } }).toArray(),
+            db.collection("inventory").find({}).toArray(),
         ]);
 
-        const salesStats = salesStatsResult.rows[0];
-        const expenseStats = expenseStatsResult.rows[0];
-        const grossRevenue = Number(salesStats.gross_revenue || 0);
-        const totalExpenses = Number(expenseStats.total_expenses || 0);
-        const profit = grossRevenue - totalExpenses;
+        const salesIds = new Set(sales.map((s: any) => s.id));
+        const saleItemsInPeriod = saleItems.filter((item: any) => salesIds.has(item.sale_id));
+        const inventoryCategory = new Map(inventory.map((item: any) => [item.id, item.category ?? "Lainnya"]));
+
+        const grossRevenue = sales.reduce((sum, row: any) => sum + Number(row.total || 0), 0);
+        const totalExpenses = purchases.reduce((sum, row: any) => sum + Number(row.total_cost || 0), 0);
+
+        const categoryMap = new Map<string, { name: string; units_sold: number; revenue: number }>();
+        for (const item of saleItemsInPeriod) {
+            const categoryName = String(inventoryCategory.get(item.inventory_id) ?? "Lainnya");
+            const row = categoryMap.get(categoryName) ?? { name: categoryName, units_sold: 0, revenue: 0 };
+            row.units_sold += Number(item.qty || 0);
+            row.revenue += Number(item.subtotal || 0);
+            categoryMap.set(categoryName, row);
+        }
+
+        const productMap = new Map<string, { name: string; total_qty: number; total_revenue: number }>();
+        for (const item of saleItemsInPeriod) {
+            const name = String(item.name);
+            const row = productMap.get(name) ?? { name, total_qty: 0, total_revenue: 0 };
+            row.total_qty += Number(item.qty || 0);
+            row.total_revenue += Number(item.subtotal || 0);
+            productMap.set(name, row);
+        }
 
         res.json({
             sales: {
-                total_sales: salesStats.total_sales,
+                total_sales: sales.length,
                 gross_revenue: grossRevenue,
                 total_expenses: totalExpenses,
-                profit: profit,
+                profit: grossRevenue - totalExpenses,
             },
-            categories: categoryStats.rows,
-            topProducts: topPerformers.rows,
+            categories: Array.from(categoryMap.values()).sort((a, b) => b.revenue - a.revenue),
+            topProducts: Array.from(productMap.values())
+                .sort((a, b) => b.total_qty - a.total_qty)
+                .slice(0, 10),
         });
     } catch (error) {
         next(error);

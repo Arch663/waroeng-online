@@ -1,7 +1,6 @@
-
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../middleware/authMiddleware";
-import { pool } from "../db";
+import { db, getNextId } from "../db";
 import { parsePayload } from "../utils/helpers";
 
 export const getInventory = async (
@@ -10,69 +9,48 @@ export const getInventory = async (
     next: NextFunction,
 ) => {
     try {
-        const {
-            q,
-            page = "1",
-            limit = "10",
-            category_id,
-            sortBy = "id",
-            order = "DESC",
-        } = req.query;
+        const { q, page = "1", limit = "10", category_id, sortBy = "id", order = "DESC" } = req.query;
         const search = q ? String(q).trim() : "";
         const p = Math.max(1, Number(page));
         const l = Math.max(1, Number(limit));
-        const offset = (p - 1) * l;
+        const allowedSortColumns = ["id", "sku", "name", "price", "stock", "category"];
+        const sortCol = allowedSortColumns.includes(String(sortBy)) ? String(sortBy) : "id";
+        const sortOrder = String(order).toUpperCase() === "ASC" ? 1 : -1;
 
-        const allowedSortColumns = [
-            "id",
-            "sku",
-            "name",
-            "price",
-            "stock",
-            "category",
-        ];
-        const sortCol = allowedSortColumns.includes(String(sortBy))
-            ? String(sortBy)
-            : "id";
-        const sortOrder = String(order).toUpperCase() === "ASC" ? "ASC" : "DESC";
-
-        let queryBase = `
-      FROM inventory i
-      LEFT JOIN categories c ON i.category_id = c.id
-      WHERE 1=1
-    `;
-        const params: any[] = [];
-
+        const filter: Record<string, unknown> = {};
         if (search) {
-            params.push(`%${search}%`);
-            queryBase += ` AND (i.sku ILIKE $${params.length} OR i.name ILIKE $${params.length})`;
+            filter.$or = [{ sku: { $regex: search, $options: "i" } }, { name: { $regex: search, $options: "i" } }];
         }
-
         if (category_id) {
-            params.push(Number(category_id));
-            queryBase += ` AND i.category_id = $${params.length}`;
+            filter.category_id = Number(category_id);
         }
 
-        const countQuery = `SELECT COUNT(*) ${queryBase}`;
-        const countResult = await pool.query(countQuery, params);
-        const totalItems = parseInt(countResult.rows[0].count);
-
-        let query = `
-      SELECT 
-        i.id, i.sku, i.name, i.price, i.stock, 
-        i.category_id, 
-        COALESCE(c.name, i.category, 'Lainnya') as category, 
-        i.image 
-      ${queryBase}
-      ORDER BY ${sortCol === "category" ? "COALESCE(c.name, i.category)" : "i." + sortCol} ${sortOrder}
-      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
-    `;
-        params.push(l, offset);
-
-        const result = await pool.query(query, params);
+        const totalItems = await db.collection("inventory").countDocuments(filter);
+        const items = await db
+            .collection("inventory")
+            .find(filter, {
+                projection: {
+                    _id: 0,
+                    id: 1,
+                    sku: 1,
+                    name: 1,
+                    price: 1,
+                    stock: 1,
+                    category_id: 1,
+                    category: 1,
+                    image: 1,
+                },
+            })
+            .sort({ [sortCol]: sortOrder })
+            .skip((p - 1) * l)
+            .limit(l)
+            .toArray();
 
         res.json({
-            items: result.rows,
+            items: items.map((item: any) => ({
+                ...item,
+                category: item.category ?? "Lainnya",
+            })),
             meta: {
                 totalItems,
                 totalPages: Math.ceil(totalItems / l),
@@ -85,58 +63,61 @@ export const getInventory = async (
     }
 };
 
-export const createInventory = async (
-    req: AuthRequest,
-    res: Response,
-    next: NextFunction,
-) => {
-    const client = await pool.connect();
+export const createInventory = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const payload = parsePayload(req.body);
-        await client.query("BEGIN");
+        const category =
+            payload.category ??
+            (await db.collection("categories").findOne({ id: payload.category_id }, { projection: { name: 1 } }))?.name ??
+            "Lainnya";
 
-        const result = await client.query(
-            `INSERT INTO inventory (sku, name, price, stock, category_id, category, image, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, sku, name, price, stock, category_id, category, image`,
-            [
-                payload.sku ?? null,
-                payload.name,
-                payload.price,
-                payload.stock,
-                payload.category_id ?? null,
-                payload.category ?? null,
-                payload.image ?? null,
-                req.user?.id ?? null,
-            ],
-        );
+        const newItem = {
+            id: await getNextId("inventory"),
+            sku: payload.sku ?? null,
+            name: payload.name,
+            price: payload.price,
+            stock: payload.stock,
+            category_id: payload.category_id ?? null,
+            category,
+            image: payload.image ?? null,
+            created_by: req.user?.id ?? null,
+            updated_by: req.user?.id ?? null,
+            created_at: new Date(),
+            updated_at: new Date(),
+        };
 
-        const newItem = result.rows[0];
+        await db.collection("inventory").insertOne(newItem);
 
         if (newItem.stock > 0) {
-            await client.query(
-                `INSERT INTO stock_movements (inventory_id, movement_type, quantity, stock_before, stock_after, notes, created_by)
-         VALUES ($1, 'adjustment', $2, 0, $3, 'Stok awal saat input barang baru', $4)`,
-                [newItem.id, newItem.stock, newItem.stock, req.user?.id ?? null],
-            );
+            await db.collection("stock_movements").insertOne({
+                id: await getNextId("stock_movements"),
+                inventory_id: newItem.id,
+                movement_type: "adjustment",
+                quantity: newItem.stock,
+                stock_before: 0,
+                stock_after: newItem.stock,
+                notes: "Stok awal saat input barang baru",
+                created_by: req.user?.id ?? null,
+                created_at: new Date(),
+            });
         }
 
-        await client.query("COMMIT");
-        res.status(201).json(newItem);
+        res.status(201).json({
+            id: newItem.id,
+            sku: newItem.sku,
+            name: newItem.name,
+            price: newItem.price,
+            stock: newItem.stock,
+            category_id: newItem.category_id,
+            category: newItem.category,
+            image: newItem.image,
+        });
     } catch (error) {
-        await client.query("ROLLBACK");
         next(error);
-    } finally {
-        client.release();
     }
 };
 
-export const updateInventory = async (
-    req: AuthRequest,
-    res: Response,
-    next: NextFunction,
-) => {
-    const client = await pool.connect();
+export const updateInventory = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const id = Number(req.params.id);
         if (!Number.isInteger(id) || id <= 0) {
@@ -145,67 +126,65 @@ export const updateInventory = async (
         }
 
         const payload = parsePayload(req.body);
-        await client.query("BEGIN");
-
-        const currentRes = await client.query(
-            "SELECT stock FROM inventory WHERE id = $1 FOR UPDATE",
-            [id],
-        );
-        if (currentRes.rowCount === 0) {
+        const existing = await db.collection("inventory").findOne({ id });
+        if (!existing) {
             res.status(404).send("Inventory item not found.");
             return;
         }
-        const oldStock = Number(currentRes.rows[0].stock);
 
-        const result = await client.query(
-            `UPDATE inventory
-       SET sku = $1, name = $2, price = $3, stock = $4, category_id = $5, category = $6, image = $7, updated_by = $8, updated_at = NOW()
-       WHERE id = $9
-       RETURNING id, sku, name, price, stock, category_id, category, image`,
-            [
-                payload.sku ?? null,
-                payload.name,
-                payload.price,
-                payload.stock,
-                payload.category_id ?? null,
-                payload.category ?? null,
-                payload.image ?? null,
-                req.user?.id ?? null,
-                id,
-            ],
+        const oldStock = Number(existing.stock ?? 0);
+        const category =
+            payload.category ??
+            (await db.collection("categories").findOne({ id: payload.category_id }, { projection: { name: 1 } }))?.name ??
+            "Lainnya";
+
+        await db.collection("inventory").updateOne(
+            { id },
+            {
+                $set: {
+                    sku: payload.sku ?? null,
+                    name: payload.name,
+                    price: payload.price,
+                    stock: payload.stock,
+                    category_id: payload.category_id ?? null,
+                    category,
+                    image: payload.image ?? null,
+                    updated_by: req.user?.id ?? null,
+                    updated_at: new Date(),
+                },
+            },
         );
 
-        const updatedItem = result.rows[0];
-
-        if (oldStock !== updatedItem.stock) {
-            await client.query(
-                `INSERT INTO stock_movements (inventory_id, movement_type, quantity, stock_before, stock_after, notes, created_by)
-         VALUES ($1, 'adjustment', $2, $3, $4, 'Penyesuaian stok manual', $5)`,
-                [
-                    id,
-                    updatedItem.stock - oldStock,
-                    oldStock,
-                    updatedItem.stock,
-                    req.user?.id ?? null,
-                ],
-            );
+        if (oldStock !== payload.stock) {
+            await db.collection("stock_movements").insertOne({
+                id: await getNextId("stock_movements"),
+                inventory_id: id,
+                movement_type: "adjustment",
+                quantity: payload.stock - oldStock,
+                stock_before: oldStock,
+                stock_after: payload.stock,
+                notes: "Penyesuaian stok manual",
+                created_by: req.user?.id ?? null,
+                created_at: new Date(),
+            });
         }
 
-        await client.query("COMMIT");
-        res.json(updatedItem);
+        res.json({
+            id,
+            sku: payload.sku ?? null,
+            name: payload.name,
+            price: payload.price,
+            stock: payload.stock,
+            category_id: payload.category_id ?? null,
+            category,
+            image: payload.image ?? null,
+        });
     } catch (error) {
-        if (client) await client.query("ROLLBACK");
         next(error);
-    } finally {
-        client.release();
     }
 };
 
-export const deleteInventory = async (
-    req: AuthRequest,
-    res: Response,
-    next: NextFunction,
-) => {
+export const deleteInventory = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const id = Number(req.params.id);
         if (!Number.isInteger(id) || id <= 0) {
@@ -213,14 +192,19 @@ export const deleteInventory = async (
             return;
         }
 
-        const result = await pool.query("DELETE FROM inventory WHERE id = $1", [
-            id,
-        ]);
-        if (!result.rowCount) {
+        const inSaleItems = await db.collection("sale_items").findOne({ inventory_id: id }, { projection: { _id: 1 } });
+        const inPurchases = await db.collection("purchases").findOne({ inventory_id: id }, { projection: { _id: 1 } });
+        if (inSaleItems || inPurchases) {
+            throw new Error("Inventory item cannot be deleted because it has transactions.");
+        }
+
+        const result = await db.collection("inventory").deleteOne({ id });
+        if (!result.deletedCount) {
             res.status(404).send("Inventory item not found.");
             return;
         }
 
+        await db.collection("stock_movements").deleteMany({ inventory_id: id });
         res.status(204).send();
     } catch (error) {
         next(error);
@@ -234,17 +218,25 @@ export const getInventoryMovements = async (
 ) => {
     try {
         const id = Number(req.params.id);
-        const result = await pool.query(
-            `SELECT 
-        sm.id, sm.movement_type, sm.quantity, sm.stock_before, sm.stock_after, 
-        sm.notes, sm.created_at, u.full_name as created_by_name
-       FROM stock_movements sm
-       LEFT JOIN users u ON sm.created_by = u.id
-       WHERE sm.inventory_id = $1
-       ORDER BY sm.created_at DESC`,
-            [id],
+        const movements = await db
+            .collection("stock_movements")
+            .find({ inventory_id: id }, { projection: { _id: 0 } })
+            .sort({ created_at: -1 })
+            .toArray();
+
+        const userIds = Array.from(new Set(movements.map((m: any) => m.created_by).filter(Boolean)));
+        const users = await db
+            .collection("users")
+            .find({ id: { $in: userIds } }, { projection: { _id: 0, id: 1, full_name: 1 } })
+            .toArray();
+        const userMap = new Map(users.map((u: any) => [u.id, u.full_name]));
+
+        res.json(
+            movements.map((m: any) => ({
+                ...m,
+                created_by_name: m.created_by ? userMap.get(m.created_by) ?? null : null,
+            })),
         );
-        res.json(result.rows);
     } catch (error) {
         next(error);
     }

@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
+import { useI18n } from "@/composables/useI18n";
 import type { InventoryItem, InventoryPayload } from "@/services/inventoryApi";
 import { getCategories, type Category } from "@/services/categoryApi";
 
@@ -15,6 +16,8 @@ const emit = defineEmits<{
 }>();
 
 const categories = ref<Category[]>([]);
+const { language, t } = useI18n();
+
 const form = ref<InventoryPayload>({
   sku: "",
   name: "",
@@ -109,7 +112,7 @@ onMounted(() => {
     <div class="bg-surface rounded-3xl w-full max-w-md p-8 border border-border flex flex-col max-h-dvh">
       <div class="overflow-y-auto overflow-x-hidden pr-1 space-y-5 scrollbar-thin scrollbar-thumb-accent/40 scrollbar-track-transparent">
         <h2 class="text-2xl font-bold mb-1">
-          {{ item ? "Edit" : "Tambah" }} Barang
+          {{ item ? t("common_edit") : (language === "id" ? "Tambah" : "Add") }} {{ language === "id" ? "Barang" : "Item" }}
         </h2>
 
         <div class="space-y-2">
@@ -123,7 +126,7 @@ onMounted(() => {
         </div>
 
         <div class="space-y-2">
-          <label for="name" class="text-sm font-medium text-muted">Nama Barang *</label>
+          <label for="name" class="text-sm font-medium text-muted">{{ language === "id" ? "Nama Barang *" : "Item Name *" }}</label>
           <input
             id="name"
             v-model="form.name"
@@ -146,7 +149,7 @@ onMounted(() => {
           </div>
 
           <div class="space-y-2">
-            <label for="stock" class="text-sm font-medium text-muted">Jumlah Stok *</label>
+            <label for="stock" class="text-sm font-medium text-muted">{{ language === "id" ? "Jumlah Stok *" : "Stock Quantity *" }}</label>
             <input
               id="stock"
               v-model.number="form.stock"
@@ -159,7 +162,7 @@ onMounted(() => {
         </div>
 
         <div class="space-y-2">
-          <label for="category" class="text-sm font-medium text-muted">Kategori *</label>
+          <label for="category" class="text-sm font-medium text-muted">{{ language === "id" ? "Kategori *" : "Category *" }}</label>
           <select
             id="category"
             v-model.number="form.category_id"
@@ -173,7 +176,7 @@ onMounted(() => {
         </div>
 
         <div class="space-y-2">
-          <label for="image" class="text-sm font-medium text-muted">Gambar Produk</label>
+          <label for="image" class="text-sm font-medium text-muted">{{ language === "id" ? "Gambar Produk" : "Product Image" }}</label>
           <div class="space-y-3">
             <div
               v-if="form.image"
@@ -198,7 +201,7 @@ onMounted(() => {
                     <path d="M3 7a2 2 0 012-2h3l2-2h4l2 2h3a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
                     <circle cx="12" cy="13" r="3" />
                   </svg>
-                  <span class="text-xs font-medium text-muted">Upload dari Local</span>
+                  <span class="text-xs font-medium text-muted">{{ language === "id" ? "Upload dari Lokal" : "Upload from Local" }}</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -224,7 +227,7 @@ onMounted(() => {
 
             <div v-else class="flex gap-2">
               <label class="flex-1 cursor-pointer text-center px-3 py-2 bg-muted/10 hover:bg-muted/20 border border-border rounded-xl text-xs font-semibold text-foreground transition-all">
-                Ganti dari Local
+                {{ language === "id" ? "Ganti dari Lokal" : "Change from Local" }}
                 <input
                   type="file"
                   accept="image/*"
@@ -237,7 +240,7 @@ onMounted(() => {
                 class="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl text-xs font-semibold text-red-500 transition-all"
                 @click="form.image = ''"
               >
-                Hapus
+                {{ t("common_delete") }}
               </button>
             </div>
           </div>
@@ -249,7 +252,7 @@ onMounted(() => {
             @click="emit('update:open', false)"
             class="flex-1 py-3 bg-muted/10 text-foreground rounded-2xl font-bold disabled:opacity-50"
           >
-            Batal
+            {{ t("common_cancel") }}
           </button>
 
           <button
@@ -257,7 +260,7 @@ onMounted(() => {
             @click="submit"
             class="flex-1 py-3 bg-accent text-white rounded-2xl font-bold disabled:opacity-50"
           >
-            {{ loading ? "Menyimpan..." : "Simpan" }}
+            {{ loading ? t("common_process") : t("common_save") }}
           </button>
         </div>
       </div>
@@ -283,5 +286,8 @@ onMounted(() => {
   transition: background-color 9999s ease-in-out 0s;
 }
 </style>
+
+
+
 
 

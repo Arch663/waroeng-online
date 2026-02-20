@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Chart } from "chart.js/auto";
+import { useI18n } from "@/composables/useI18n";
 
 const props = defineProps<{
   points: Array<{ day?: string; month?: string; profit: number }>;
@@ -10,6 +11,7 @@ const props = defineProps<{
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 let chart: Chart | null = null;
+const { t } = useI18n();
 
 function getChartColors() {
   const css = getComputedStyle(document.documentElement);
@@ -38,7 +40,7 @@ function draw() {
       labels,
       datasets: [
         {
-          label: "Laba Bersih",
+          label: t("dashboard_chart_net_profit"),
           data,
           borderColor: c.accent,
           backgroundColor: c.accent + "22",
@@ -68,7 +70,7 @@ function draw() {
           displayColors: false,
           callbacks: {
             label(context: any) {
-              return `Laba: Rp ${context.parsed.y.toLocaleString("id-ID")}`;
+              return `${t("dashboard_chart_net_profit")}: Rp ${context.parsed.y.toLocaleString("id-ID")}`;
             },
           },
         },
@@ -119,8 +121,8 @@ onBeforeUnmount(() => {
   <div class="p-8 h-80 flex flex-col">
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h3 class="text-xs font-black text-muted uppercase tracking-widest mb-2">Efficiency Analysis</h3>
-        <h2 class="text-2xl font-black text-foreground uppercase tracking-tight">{{ title || "Analisis Laba" }}</h2>
+        <h3 class="text-xs font-black text-muted uppercase tracking-widest mb-2">{{ t("dashboard_chart_efficiency") }}</h3>
+        <h2 class="text-2xl font-black text-foreground uppercase tracking-tight">{{ title || t("dashboard_chart_profit_analysis") }}</h2>
       </div>
       <div class="w-10 h-10 flex items-center justify-center bg-accent/10 text-accent rounded-xls">
         <svg

@@ -12,6 +12,7 @@ import Inventory from "@/pages/InventoryPage.vue";
 import Supplier from "@/pages/SupplierPage.vue";
 import Purchase from "@/pages/PurchasePage.vue";
 import Reports from "@/pages/ReportsPage.vue";
+import Settings from "@/pages/SettingsPage.vue";
 import Login from "@/pages/LoginPage.vue";
 import Register from "@/pages/RegisterPage.vue";
 
@@ -63,6 +64,12 @@ const routes = [
     name: "reports",
     component: Reports,
     meta: { roles: ["admin", "manager"] },
+  },
+  {
+    path: "/settings",
+    name: "settings",
+    component: Settings,
+    meta: { roles: ["admin", "manager", "cashier"] },
   },
 ];
 

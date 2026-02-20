@@ -18,6 +18,11 @@ const pageSize = 5;
 const sortBy = ref<"name" | "sold" | "revenue">("sold");
 const order = ref<"ASC" | "DESC">("DESC");
 
+function sortArrow(isActive: boolean, sortOrder: "ASC" | "DESC") {
+  if (!isActive) return "↕";
+  return sortOrder === "ASC" ? "↑" : "↓";
+}
+
 function handleSort(column: "name" | "sold" | "revenue") {
   if (sortBy.value === column) {
     order.value = order.value === "ASC" ? "DESC" : "ASC";
@@ -87,7 +92,7 @@ watch(
               <span class="inline-flex items-center gap-1">
                 Produk
                 <span :class="sortBy === 'name' ? 'text-accent' : ''">
-                  {{ sortBy === "name" && order === "ASC" ? "↑" : "↓" }}
+                  {{ sortArrow(sortBy === "name", order) }}
                 </span>
               </span>
             </th>
@@ -95,7 +100,7 @@ watch(
               <span class="inline-flex items-center gap-1">
                 Terjual
                 <span :class="sortBy === 'sold' ? 'text-accent' : ''">
-                  {{ sortBy === "sold" && order === "ASC" ? "↑" : "↓" }}
+                  {{ sortArrow(sortBy === "sold", order) }}
                 </span>
               </span>
             </th>
@@ -103,7 +108,7 @@ watch(
               <span class="inline-flex items-center gap-1">
                 Omzet
                 <span :class="sortBy === 'revenue' ? 'text-accent' : ''">
-                  {{ sortBy === "revenue" && order === "ASC" ? "↑" : "↓" }}
+                  {{ sortArrow(sortBy === "revenue", order) }}
                 </span>
               </span>
             </th>

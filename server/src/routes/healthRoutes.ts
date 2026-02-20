@@ -1,13 +1,13 @@
 
 import { Router } from "express";
-import { pool } from "../db";
+import { db } from "../db";
 
 const router = Router();
 
 router.get("/", async (_req, res, next) => {
     try {
-        const result = await pool.query("SELECT NOW() AS now");
-        res.json({ ok: true, dbTime: result.rows[0].now });
+        const ping = await db.command({ ping: 1 });
+        res.json({ ok: ping.ok === 1, dbTime: new Date().toISOString() });
     } catch (error) {
         next(error);
     }

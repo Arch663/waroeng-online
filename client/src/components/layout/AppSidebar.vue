@@ -1,34 +1,56 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { useTheme } from "@/composables/useTheme";
+import { useLanguage } from "@/composables/useLanguage";
 import AppLogo from "@/components/ui/AppLogo.vue";
 
-type MenuIcon = "dashboard" | "cashier" | "inventory" | "purchase" | "supplier" | "report";
+type MenuIcon = "dashboard" | "cashier" | "inventory" | "purchase" | "supplier" | "report" | "setting";
+type MenuLabelKey = "dashboard" | "cashier" | "inventory" | "purchase" | "supplier" | "report" | "setting";
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
-const { isDark } = useTheme();
+const { language } = useLanguage();
 const isExpanded = ref(false);
 
-const toggleDarkMode = () => {
-  isDark.value = !isDark.value;
-};
+const text = computed(() =>
+  language.value === "id"
+    ? {
+        dashboard: "Dashboard",
+        cashier: "Kasir",
+        inventory: "Inventori",
+        purchase: "Pembelian",
+        supplier: "Supplier",
+        report: "Laporan",
+        setting: "Pengaturan",
+        logout: "Keluar",
+      }
+    : {
+        dashboard: "Dashboard",
+        cashier: "Cashier",
+        inventory: "Inventory",
+        purchase: "Purchases",
+        supplier: "Suppliers",
+        report: "Reports",
+        setting: "Settings",
+        logout: "Logout",
+      },
+);
 
 function handleLogout() {
   auth.logout();
   router.push("/login");
 }
 
-const menuItems: Array<{ name: string; path: string; icon: MenuIcon; roles: string[] }> = [
-  { name: "Dashboard", path: "/", icon: "dashboard", roles: ["admin", "manager"] },
-  { name: "Kasir", path: "/kasir", icon: "cashier", roles: ["admin", "cashier"] },
-  { name: "Inventori", path: "/inventory", icon: "inventory", roles: ["admin", "manager"] },
-  { name: "Pembelian", path: "/purchases", icon: "purchase", roles: ["admin", "manager"] },
-  { name: "Supplier", path: "/suppliers", icon: "supplier", roles: ["admin", "manager"] },
-  { name: "Laporan", path: "/reports", icon: "report", roles: ["admin", "manager"] },
+const menuItems: Array<{ name: MenuLabelKey; path: string; icon: MenuIcon; roles: string[] }> = [
+  { name: "dashboard", path: "/", icon: "dashboard", roles: ["admin", "manager"] },
+  { name: "cashier", path: "/kasir", icon: "cashier", roles: ["admin", "cashier"] },
+  { name: "inventory", path: "/inventory", icon: "inventory", roles: ["admin", "manager"] },
+  { name: "purchase", path: "/purchases", icon: "purchase", roles: ["admin", "manager"] },
+  { name: "supplier", path: "/suppliers", icon: "supplier", roles: ["admin", "manager"] },
+  { name: "report", path: "/reports", icon: "report", roles: ["admin", "manager"] },
+  { name: "setting", path: "/settings", icon: "setting", roles: ["admin", "manager", "cashier"] },
 ];
 
 const filteredMenu = computed(() => {
@@ -53,40 +75,41 @@ const iconPaths: Record<MenuIcon, string[]> = {
     "M9 17v-6m4 6V7m4 10v-3",
     "M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z",
   ],
+  setting: ["M12 8a4 4 0 100 8 4 4 0 000-8z", "M3 12h2m14 0h2M12 3v2m0 14v2M5.64 5.64l1.41 1.41m9.9 9.9 1.41 1.41m0-12.72-1.41 1.41m-9.9 9.9-1.41 1.41"],
 };
 </script>
 
 <template>
   <aside
-    class="flex flex-col h-dvh fixed left-0 top-0 bg-glass-bg backdrop-blur-3xl border-r border-border z-40 transition-all duration-300"
+    class="flex flex-col h-dvh fixed left-0 top-0 bg-surface border-r border-border z-40 transition-all duration-300"
     :class="isExpanded ? 'w-72' : 'w-22'"
     @mouseenter="isExpanded = true"
     @mouseleave="isExpanded = false"
   >
-    <div class="p-4" :class="isExpanded ? 'px-6 pt-8 pb-4' : 'px-4 pt-6 pb-3'">
+    <div class="p-4" :class="isExpanded ? 'px-5 pt-6 pb-4' : 'px-4 pt-5 pb-3'">
       <AppLogo :compact="!isExpanded" subtitle="Online" />
     </div>
 
-    <nav class="flex-1 px-3 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-accent/35 scrollbar-track-transparent">
+    <nav class="flex-1 px-3 py-3 space-y-1.5 overflow-y-auto scrollbar-thin scrollbar-thumb-accent/30 scrollbar-track-transparent">
       <router-link
         v-for="item in filteredMenu"
         :key="item.path"
         :to="item.path"
-        class="group flex items-center rounded-2xl transition-all duration-300 relative overflow-hidden py-4"
+        class="group flex items-center rounded-lg transition-colors duration-200 relative overflow-hidden py-3"
         :class="[
-          isExpanded ? 'gap-4 px-4 justify-start' : 'justify-center px-2',
+          isExpanded ? 'gap-3 px-3.5 justify-start' : 'justify-center px-2',
           route.path === item.path
-            ? 'bg-accent/10 text-accent border border-accent/20'
-            : 'text-muted hover:text-foreground hover:bg-surface/70',
+            ? 'bg-accent/10 text-accent border border-accent/25'
+            : 'text-muted hover:text-foreground hover:bg-background/60',
         ]"
       >
         <div
           v-if="route.path === item.path && isExpanded"
-          class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-accent rounded-r-full"
+          class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-accent rounded-r-full"
         ></div>
 
         <svg
-          class="w-5 h-5 transition-transform group-hover:scale-110 duration-300"
+          class="w-5 h-5"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -96,44 +119,14 @@ const iconPaths: Record<MenuIcon, string[]> = {
         >
           <path v-for="path in iconPaths[item.icon]" :key="path" :d="path" />
         </svg>
-        <span v-show="isExpanded" class="font-black text-sm uppercase tracking-widest">{{ item.name }}</span>
+        <span v-show="isExpanded" class="font-medium text-sm">{{ text[item.name] }}</span>
       </router-link>
     </nav>
 
-    <div class="p-3" :class="isExpanded ? 'p-6' : 'p-3'">
-      <div class="flex items-center rounded-2xl mb-3" :class="isExpanded ? 'justify-between p-3' : 'justify-center p-2'">
-        <div v-show="isExpanded" class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
-          <span class="text-xs font-black text-muted uppercase tracking-widest">Theme Sync</span>
-        </div>
-        <button
-          @click="toggleDarkMode"
-          class="p-2 hover:bg-accent/10 rounded-xl transition-all text-foreground"
-          :title="isDark ? 'Switch to Eva-02 (Light)' : 'Switch to Eva-01 (Dark)'"
-        >
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path v-if="isDark" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.36 6.36-1.41-1.41M7.05 7.05 5.64 5.64m12.72 0-1.41 1.41M7.05 16.95l-1.41 1.41M12 7a5 5 0 100 10 5 5 0 000-10z" />
-            <path v-else d="M12 3a9 9 0 109 9A7 7 0 0112 3z" />
-          </svg>
-        </button>
-      </div>
-      <p v-show="isExpanded" class="text-xs font-black uppercase tracking-wider text-muted/80 mb-3">
-        {{ isDark ? "Mode: Eva Unit-01" : "Mode: Eva Unit-02" }}
-      </p>
-
-      <div class="flex items-center rounded-2xl mb-3" :class="isExpanded ? 'gap-3 p-2' : 'justify-center p-2'">
-        <div class="w-10 h-10 rounded-xl bg-foreground/10 flex items-center justify-center text-foreground font-black border border-foreground/10 text-xs">
-          {{ auth.user?.full_name?.charAt(0) || "U" }}
-        </div>
-        <div v-show="isExpanded" class="min-w-0">
-          <p class="text-xs font-black text-foreground truncate uppercase tracking-tight">{{ auth.user?.full_name }}</p>
-          <p class="text-xs font-bold text-muted truncate uppercase tracking-widest opacity-60">{{ auth.user?.role }}</p>
-        </div>
-      </div>
-
+    <div class="p-3 border-t border-border" :class="isExpanded ? 'p-4' : 'p-3'">
       <button
         @click="handleLogout"
-        class="w-full py-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 border border-red-500/20 flex items-center"
+        class="w-full py-2.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg text-xs font-medium transition-colors border border-red-500/20 flex items-center"
         :class="isExpanded ? 'justify-center px-4' : 'justify-center px-2'"
       >
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -141,10 +134,8 @@ const iconPaths: Record<MenuIcon, string[]> = {
           <path d="M16 17l5-5-5-5" />
           <path d="M21 12H9" />
         </svg>
-        <span v-show="isExpanded" class="ml-2">Exit</span>
+        <span v-show="isExpanded" class="ml-2">{{ text.logout }}</span>
       </button>
     </div>
   </aside>
 </template>
-
-

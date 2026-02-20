@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from "@/composables/useI18n";
 defineProps<{
   items: Array<{
     id: number;
@@ -6,13 +7,14 @@ defineProps<{
     stock: number;
   }>;
 }>();
+const { language } = useI18n();
 </script>
 
 <template>
   <div class="bg-surface rounded-2xl max-h-39 p-4 shadow-sm overflow-y-auto scrollbar scrollbar-thumb-foreground scrollbar-track-border scrollbar-hover:scrollbar-thumb-surface">
-    <h2 class="font-semibold mb-4">Stok Menipis</h2>
+    <h2 class="font-semibold mb-4">{{ language === "id" ? "Stok Menipis" : "Low Stock" }}</h2>
     <div v-if="items.length === 0" class="text-sm text-muted">
-      Tidak ada produk dengan stok kritis.
+      {{ language === "id" ? "Tidak ada produk dengan stok kritis." : "No products with critical stock." }}
     </div>
     <div v-else class="space-y-3">
       <div

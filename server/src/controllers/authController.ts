@@ -2,7 +2,7 @@
 import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { pool } from "../db";
+import { db, getNextId } from "../db";
 import { AuthRequest } from "../middleware/authMiddleware";
 
 const JWT_SECRET = process.env.JWT_SECRET || "waroeng_super_secret_key_2026";
@@ -18,18 +18,17 @@ export const login = async (
             throw new Error("Username and password are required.");
         }
 
-        const result = await pool.query(
-            "SELECT id, username, password_hash, full_name, role FROM users WHERE username = $1 AND is_active = true",
-            [username],
-        );
+        const user = await db.collection("users").findOne({
+            username,
+            is_active: true,
+        });
 
-        if (result.rowCount === 0) {
+        if (!user) {
             res.status(401).send("Invalid username or password.");
             return;
         }
 
-        const user = result.rows[0];
-        const valid = await bcrypt.compare(password, user.password_hash);
+        const valid = await bcrypt.compare(password, String(user.password_hash));
 
         if (!valid) {
             res.status(401).send("Invalid username or password.");
@@ -51,9 +50,9 @@ export const login = async (
             token,
             user: {
                 id: user.id,
-                username: user.username,
-                role: user.role,
-                full_name: user.full_name,
+                username: String(user.username),
+                role: String(user.role),
+                full_name: String(user.full_name),
             },
         });
     } catch (error) {
@@ -82,12 +81,24 @@ export const register = async (
 
         const passwordHash = await bcrypt.hash(password, 10);
 
-        const result = await pool.query(
-            "INSERT INTO users (username, password_hash, full_name, role, is_active) VALUES ($1, $2, $3, $4, true) RETURNING id, username, full_name, role",
-            [username, passwordHash, full_name, userRole]
-        );
+        const userDoc = {
+            id: await getNextId("users"),
+            username,
+            password_hash: passwordHash,
+            full_name,
+            role: userRole,
+            is_active: true,
+            created_at: new Date(),
+            updated_at: new Date(),
+        };
 
-        res.status(201).json(result.rows[0]);
+        await db.collection("users").insertOne(userDoc);
+        res.status(201).json({
+            id: userDoc.id,
+            username: userDoc.username,
+            full_name: userDoc.full_name,
+            role: userDoc.role,
+        });
     } catch (error) {
         next(error);
     }

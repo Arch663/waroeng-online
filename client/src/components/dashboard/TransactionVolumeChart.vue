@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Chart } from "chart.js/auto";
+import { useI18n } from "@/composables/useI18n";
 
 const props = defineProps<{
   points: Array<{ day?: string; count?: number }>;
@@ -8,6 +9,7 @@ const props = defineProps<{
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 let chart: Chart | null = null;
+const { t } = useI18n();
 
 function getChartColors() {
   const css = getComputedStyle(document.documentElement);
@@ -36,7 +38,7 @@ function draw() {
       labels,
       datasets: [
         {
-          label: "Volume Transaksi",
+          label: t("dashboard_chart_transaction_volume"),
           data,
           backgroundColor: c.accent + "33",
           hoverBackgroundColor: c.accent,
@@ -108,8 +110,8 @@ onBeforeUnmount(() => {
   <div class="h-full flex flex-col">
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h3 class="text-xs font-black text-muted uppercase tracking-widest mb-1">Pulse Monitor</h3>
-        <h2 class="text-xl md:text-2xl font-black text-foreground uppercase tracking-tight">Volume Transaksi</h2>
+        <h3 class="text-xs font-black text-muted uppercase tracking-widest mb-1">{{ t("dashboard_chart_pulse_monitor") }}</h3>
+        <h2 class="text-xl md:text-2xl font-black text-foreground uppercase tracking-tight">{{ t("dashboard_chart_transaction_volume") }}</h2>
       </div>
       <div class="w-9 h-9 flex items-center justify-center bg-accent/10 text-accent rounded-xl">
         <svg

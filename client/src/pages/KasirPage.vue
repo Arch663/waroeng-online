@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import CardStat from "@/components/ui/CardStat.vue";
+import { useI18n } from "@/composables/useI18n";
 import CategoryTabs from "@/components/ui/CategoryTabs.vue";
 import ProductGrid from "@/components/kasir/ProductGrid.vue";
 import OrderList from "@/components/kasir/OrderList.vue";
@@ -9,6 +9,7 @@ import PaymentSummary from "@/components/kasir/PaymentSummary.vue";
 import Pagination from "@/components/ui/Pagination.vue";
 import Skeleton from "@/components/ui/Skeleton.vue";
 import PageTitle from "@/components/ui/PageTitle.vue";
+import SearchBar from "@/components/ui/SearchBar.vue";
 import { useCartStore } from "@/stores/useCartStore";
 import type { Product } from "@/types/product";
 import {
@@ -30,7 +31,7 @@ const meta = ref<InventoryResponse["meta"]>({
   limit: 12,
 });
 const categoriesData = ref<Category[]>([]);
-const active = ref((route.query.category as string) || "Semua");
+const active = ref((route.query.category as string) || "all");
 const searchQuery = ref((route.query.q as string) || "");
 const pageSize = ref(Number(route.query.limit) || 12);
 const loading = ref(false);
@@ -38,16 +39,11 @@ const checkoutLoading = ref(false);
 const error = ref("");
 const successMessage = ref("");
 const showCartMobile = ref(false);
+const { t } = useI18n();
 
 const categories = computed(() => {
-  return ["Semua", ...categoriesData.value.map((c) => c.name)];
+  return ["all", ...categoriesData.value.map((c) => c.name)];
 });
-
-const availableProducts = computed(() => meta.value.totalItems);
-const cartItemCount = computed(() => cart.totalQty);
-const lowStockOnPage = computed(
-  () => products.value.filter((item) => item.stock <= 10).length,
-);
 
 async function loadInventory(page = 1) {
   loading.value = true;
@@ -110,7 +106,7 @@ watch(active, (newCat) => {
   router.push({
     query: {
       ...route.query,
-      category: newCat !== "Semua" ? newCat : undefined,
+      category: newCat !== "all" ? newCat : undefined,
       page: 1,
     },
   });
@@ -128,7 +124,7 @@ watch(
   () => route.query,
   () => {
     searchQuery.value = (route.query.q as string) || "";
-    active.value = (route.query.category as string) || "Semua";
+    active.value = (route.query.category as string) || "all";
     pageSize.value = Number(route.query.limit) || 12;
     meta.value.limit = pageSize.value;
     loadInventory(Number(route.query.page) || 1);
@@ -192,9 +188,9 @@ onMounted(async () => {
   <div class="space-y-10 pb-12 px-2 md:px-0">
     <div class="space-y-8">
       <PageTitle
-        title="Sistem"
-        highlight="Kasir"
-        subtitle="Interface: point of sale terminal"
+        :title="t('kasir_title')"
+        :highlight="t('kasir_highlight')"
+        :subtitle="t('kasir_subtitle')"
       >
         <template #action>
           <button
@@ -224,78 +220,7 @@ onMounted(async () => {
         </template>
       </PageTitle>
 
-      <div class="relative group">
-        <div
-          class="absolute inset-y-0 left-5 flex items-center pointer-events-none text-muted transition-colors group-focus-within:text-accent"
-        >
-          <svg
-            class="w-5 h-5 opacity-40"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="INPUT NAMA BARANG..."
-          class="w-full bg-surface/30 backdrop-blur-3xl border border-border/50 rounded-2xl py-5 pl-14 pr-6 focus:outline-none focus:ring-4 focus:ring-accent/10 focus:border-accent transition-all placeholder:text-muted/30 placeholder:font-black placeholder:text-xs placeholder:tracking-widest"
-        />
-      </div>
-    </div>
-
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <CardStat
-        title="Nilai Keranjang"
-        :value="`Rp ${Number(cart.total).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`"
-      >
-        <template #icon>
-          <svg class="w-8 h-8 md:w-10 md:h-10 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M2 7h20v10H2z" />
-            <path d="M12 10a2 2 0 100 4 2 2 0 000-4z" />
-            <path d="M6 9v6M18 9v6" />
-          </svg>
-        </template>
-      </CardStat>
-      <CardStat
-        title="Item Keranjang"
-        :value="cartItemCount.toLocaleString('id-ID')"
-      >
-        <template #icon>
-          <svg class="w-8 h-8 md:w-10 md:h-10 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
-            <path d="M3 10h18" />
-          </svg>
-        </template>
-      </CardStat>
-      <CardStat
-        title="Produk Tersedia"
-        :value="availableProducts.toLocaleString('id-ID')"
-      >
-        <template #icon>
-          <svg class="w-8 h-8 md:w-10 md:h-10 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
-          </svg>
-        </template>
-      </CardStat>
-      <CardStat
-        title="Stok Kritis"
-        :value="lowStockOnPage.toLocaleString('id-ID')"
-      >
-        <template #icon>
-          <svg class="w-8 h-8 md:w-10 md:h-10 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3l10 18H2L12 3z" />
-            <path d="M12 9v5M12 18h.01" />
-          </svg>
-        </template>
-      </CardStat>
+      <SearchBar v-model="searchQuery" :placeholder="t('kasir_search')" />
     </div>
 
     <div v-if="error || successMessage">
@@ -339,7 +264,7 @@ onMounted(async () => {
           <div
             v-for="i in 8"
             :key="i"
-            class="bg-surface/60 backdrop-blur-xl rounded-3xl p-4 border border-border shadow-xl"
+            class="bg-surface rounded-2xl p-4 border border-border shadow-xl"
           >
             <Skeleton height="140px" borderRadius="1.5rem" className="mb-3" />
             <Skeleton width="80%" height="20px" className="mb-2" />
@@ -349,7 +274,7 @@ onMounted(async () => {
 
         <template v-else>
           <div class="flex items-center justify-end gap-2">
-            <label for="kasir-page-size" class="text-xs text-muted">Items / halaman</label>
+            <label for="kasir-page-size" class="text-xs text-muted">{{ t("kasir_items_per_page") }}</label>
             <select
               id="kasir-page-size"
               :value="pageSize"
@@ -367,16 +292,16 @@ onMounted(async () => {
 
           <div
             v-if="products.length === 0"
-            class="py-20 text-center text-muted bg-surface/40 backdrop-blur-md rounded-3xl border border-border border-dashed"
+            class="py-20 text-center text-muted bg-surface/40 backdrop-blur-md rounded-2xl border border-border border-dashed"
           >
             <div class="mx-auto mb-4 w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 text-accent flex items-center justify-center">
               <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
               </svg>
             </div>
-            <p class="font-bold text-lg">Barang tidak ditemukan</p>
+            <p class="font-bold text-lg">{{ t("kasir_not_found") }}</p>
             <p class="text-sm mt-2">
-              Coba kata kunci lain atau pilih kategori berbeda.
+              {{ t("kasir_try_other") }}
             </p>
           </div>
 
@@ -408,7 +333,7 @@ onMounted(async () => {
         <div
           class="flex items-center justify-between p-4 border-b border-border bg-surface"
         >
-          <h2 class="text-lg font-bold">Detail Pesanan</h2>
+          <h2 class="text-lg font-bold">{{ t("kasir_cart_detail") }}</h2>
           <button
             @click="showCartMobile = false"
             class="p-2 hover:bg-muted rounded-full"
@@ -441,6 +366,8 @@ onMounted(async () => {
     </Transition>
   </div>
 </template>
+
+
 
 
 

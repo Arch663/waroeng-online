@@ -1,5 +1,6 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "@/composables/useI18n";
 
 const props = defineProps<{
   open: boolean;
@@ -14,6 +15,8 @@ const emit = defineEmits<{
   confirm: [];
   cancel: [];
 }>();
+
+const { t } = useI18n();
 
 const variantClasses = computed(() => {
   switch (props.variant) {
@@ -37,8 +40,7 @@ const variantClasses = computed(() => {
       <div
         class="bg-surface/30 backdrop-blur-3xl border border-glass-border rounded-4xl max-w-md w-full p-10 space-y-8 relative overflow-hidden transition-all duration-300 scale-100"
       >
-        <!-- Decorative bar -->
-        <div 
+        <div
           class="absolute top-0 left-0 w-2 h-full"
           :class="variant === 'danger' ? 'bg-red-500' : variant === 'warning' ? 'bg-orange-500' : 'bg-accent'"
         ></div>
@@ -47,11 +49,11 @@ const variantClasses = computed(() => {
           <div class="flex flex-col">
             <span class="text-xs font-black text-accent tracking-widest uppercase mb-2">Decision_Required</span>
             <h3 class="text-3xl font-black text-foreground uppercase tracking-tighter leading-none">
-              {{ title || "Confirm" }}
+              {{ title || t('confirm_title') }}
             </h3>
           </div>
           <p class="text-sm font-bold text-muted uppercase tracking-widest leading-loose opacity-70">
-            {{ message || "Please confirm the execution of this protocol to proceed with the operation." }}
+            {{ message || t('confirm_message') }}
           </p>
         </div>
 
@@ -60,7 +62,7 @@ const variantClasses = computed(() => {
             @click="emit('cancel')"
             class="flex-1 py-4 text-xs font-black uppercase tracking-widest border border-glass-border rounded-xl hover:bg-muted/10 transition-all text-foreground"
           >
-            {{ cancelText || "Abort" }}
+            {{ cancelText || t('confirm_abort') }}
           </button>
           <button
             @click="emit('confirm')"
@@ -69,7 +71,7 @@ const variantClasses = computed(() => {
               'flex-1 py-4 text-xs font-black uppercase tracking-widest rounded-xl transition-all active:scale-95',
             ]"
           >
-            {{ confirmText || "Execute" }}
+            {{ confirmText || t('confirm_execute') }}
           </button>
         </div>
       </div>
@@ -89,5 +91,3 @@ const variantClasses = computed(() => {
 }
 
 </style>
-
-

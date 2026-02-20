@@ -1,5 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "@/composables/useI18n";
 import {
   getSuppliers,
   createSupplier,
@@ -10,9 +12,15 @@ import {
 import ConfirmModal from "@/components/ui/ConfirmModal.vue";
 import Skeleton from "@/components/ui/Skeleton.vue";
 import PageTitle from "@/components/ui/PageTitle.vue";
+import PageActionButton from "@/components/ui/PageActionButton.vue";
 import Pagination from "@/components/ui/Pagination.vue";
 import TableCard from "@/components/ui/TableCard.vue";
+import FormModalShell from "@/components/ui/FormModalShell.vue";
+import SearchBar from "@/components/ui/SearchBar.vue";
+import DataTable from "@/components/ui/DataTable.vue";
 
+const route = useRoute();
+const router = useRouter();
 const suppliers = ref<Supplier[]>([]);
 const loading = ref(false);
 const error = ref("");
@@ -23,8 +31,15 @@ const supplierToDelete = ref<Supplier | null>(null);
 
 const sortBy = ref("name");
 const order = ref<"ASC" | "DESC">("ASC");
+const searchQuery = ref((route.query.q as string) || "");
 const currentPage = ref(1);
 const pageSize = 10;
+const { t, language } = useI18n();
+
+function sortArrow(isActive: boolean, sortOrder: "ASC" | "DESC") {
+  if (!isActive) return "↕";
+  return sortOrder === "ASC" ? "↑" : "↓";
+}
 
 const form = ref({
   name: "",
@@ -47,18 +62,45 @@ async function loadSuppliers() {
   }
 }
 
+const filteredSuppliers = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  if (!q) return suppliers.value;
+  return suppliers.value.filter((s) => {
+    return (
+      String(s.name ?? "").toLowerCase().includes(q) ||
+      String(s.contact_person ?? "").toLowerCase().includes(q) ||
+      String(s.phone ?? "").toLowerCase().includes(q) ||
+      String(s.address ?? "").toLowerCase().includes(q)
+    );
+  });
+});
+
 const totalPages = computed(() => {
-  return Math.max(1, Math.ceil(suppliers.value.length / pageSize));
+  return Math.max(1, Math.ceil(filteredSuppliers.value.length / pageSize));
 });
 
 const paginatedSuppliers = computed(() => {
   const start = (currentPage.value - 1) * pageSize;
-  return suppliers.value.slice(start, start + pageSize);
+  return filteredSuppliers.value.slice(start, start + pageSize);
 });
 
 function handlePageChange(page: number) {
   currentPage.value = page;
 }
+
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+watch(searchQuery, (newQ) => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    router.push({
+      query: {
+        ...route.query,
+        q: newQ || undefined,
+        page: 1,
+      },
+    });
+  }, 400);
+});
 
 function handleSort(column: string) {
   if (sortBy.value === column) {
@@ -127,29 +169,38 @@ watch(
   },
 );
 
+watch(
+  () => route.query,
+  () => {
+    searchQuery.value = (route.query.q as string) || "";
+    currentPage.value = Number(route.query.page) || 1;
+  },
+  { deep: true },
+);
+
 onMounted(loadSuppliers);
 </script>
 
 <template>
   <div class="space-y-10 pb-12 px-2 md:px-0">
     <PageTitle
-      title="Basis"
-      highlight="Supplier"
-      subtitle="Station: external resource network"
+      :title="t('supplier_title')"
+      :highlight="t('supplier_highlight')"
+      :subtitle="t('supplier_subtitle')"
     >
       <template #action>
-        <button
-          @click="handleAdd"
-          class="px-8 py-4 bg-accent text-background rounded-2xl font-black uppercase tracking-widest hover:-translate-y-1 transition-all active:scale-95 text-xs"
-        >
-          + Register New Supplier
-        </button>
+        <PageActionButton :label="t('supplier_add')" @click="handleAdd" />
       </template>
     </PageTitle>
 
+    <SearchBar
+      v-model="searchQuery"
+      :placeholder="language === 'id' ? 'Cari supplier / PIC / telepon / alamat...' : 'Search supplier / PIC / phone / address...'"
+    />
+
     <div
       v-if="loading && suppliers.length === 0"
-      class="bg-surface/60 backdrop-blur-xl rounded-2xl p-8 border border-border"
+      class="bg-surface rounded-2xl p-8 border border-border"
     >
       <div class="flex gap-4 mb-6">
         <Skeleton v-for="i in 5" :key="i" height="20px" />
@@ -167,22 +218,25 @@ onMounted(loadSuppliers);
 
     <TableCard v-else>
       <template #default>
-        <table class="w-full text-left">
-          <thead
-            class="bg-muted/10 text-xs uppercase tracking-widest font-black text-muted"
-          >
+        <DataTable
+          :has-data="filteredSuppliers.length > 0"
+          :columns="5"
+          :empty-text="language === 'id' ? 'Tidak ada data supplier.' : 'No supplier data.'"
+          thead-class="bg-muted/10 text-xs uppercase tracking-widest font-black text-muted"
+        >
+          <template #head>
             <tr>
               <th
                 class="px-6 py-4 text-foreground cursor-pointer group"
                 @click="handleSort('name')"
               >
                 <div class="flex items-center gap-1">
-                  Nama Supplier
+                  {{ language === "id" ? "Nama Supplier" : "Supplier Name" }}
                   <span
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
                     :class="sortBy === 'name' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "name" && order === "ASC" ? "↑" : "↓" }}
+                    {{ sortArrow(sortBy === "name", order) }}
                   </span>
                 </div>
               </th>
@@ -201,9 +255,7 @@ onMounted(loadSuppliers);
                     "
                   >
                     {{
-                      sortBy === "contact_person" && order === "ASC"
-                        ? "↑"
-                        : "↓"
+                      sortArrow(sortBy === "contact_person", order)
                     }}
                   </span>
                 </div>
@@ -213,12 +265,12 @@ onMounted(loadSuppliers);
                 @click="handleSort('phone')"
               >
                 <div class="flex items-center gap-1">
-                  No. Telp
+                  {{ language === "id" ? "Phone" : "Phone" }}
                   <span
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
                     :class="sortBy === 'phone' ? 'opacity-100 text-accent' : ''"
                   >
-                    {{ sortBy === "phone" && order === "ASC" ? "↑" : "↓" }}
+                    {{ sortArrow(sortBy === "phone", order) }}
                   </span>
                 </div>
               </th>
@@ -227,7 +279,7 @@ onMounted(loadSuppliers);
                 @click="handleSort('address')"
               >
                 <div class="flex items-center gap-1">
-                  Alamat
+                  {{ language === "id" ? "Alamat" : "Address" }}
                   <span
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
                     :class="
@@ -235,15 +287,15 @@ onMounted(loadSuppliers);
                     "
                   >
                     {{
-                      sortBy === "address" && order === "ASC" ? "↑" : "↓"
+                      sortArrow(sortBy === "address", order)
                     }}
                   </span>
                 </div>
               </th>
-              <th class="px-6 py-4 text-right">Aksi</th>
+              <th class="px-6 py-4 text-right">{{ language === "id" ? "Aksi" : "Action" }}</th>
             </tr>
-          </thead>
-          <tbody class="divide-y divide-border">
+          </template>
+          <template #body>
             <tr
               v-for="s in paginatedSuppliers"
               :key="s.id"
@@ -265,24 +317,19 @@ onMounted(loadSuppliers);
                     @click="handleEdit(s)"
                     class="p-2 text-accent hover:bg-accent/10 rounded-xl transition-all"
                   >
-                    Edit
+                    {{ t("common_edit") }}
                   </button>
                   <button
                     @click="handleDelete(s)"
                     class="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
                   >
-                    Hapus
+                    {{ t("common_delete") }}
                   </button>
                 </div>
               </td>
             </tr>
-            <tr v-if="suppliers.length === 0">
-              <td colspan="5" class="px-6 py-12 text-center text-muted">
-                Tidak ada data supplier.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          </template>
+        </DataTable>
       </template>
       <template #footer>
         <Pagination
@@ -293,24 +340,14 @@ onMounted(loadSuppliers);
       </template>
     </TableCard>
 
-    <div
-      v-if="showForm"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
-      @click.self="showForm = false"
-    >
-      <div
-        class="bg-surface rounded-3xl w-full max-w-md p-8 border border-border flex flex-col max-h-dvh"
-      >
-        <div
-          class="overflow-y-auto overflow-x-hidden pr-1 space-y-5 scrollbar-thin scrollbar-thumb-accent/40 scrollbar-track-transparent"
-        >
+    <FormModalShell :open="showForm" @close="showForm = false">
           <h2 class="text-2xl font-bold mb-1">
-            {{ selectedSupplier ? "Edit" : "Tambah" }} Supplier
+            {{ selectedSupplier ? t("common_edit") : (language === "id" ? "Tambah" : "Add") }} Supplier
           </h2>
           <form @submit.prevent="handleSave" class="space-y-4">
             <div class="space-y-2">
               <label class="text-sm font-medium text-muted"
-                >Nama Supplier *</label
+                >{{ language === "id" ? "Nama Supplier *" : "Supplier Name *" }}</label
               >
               <input
                 v-model="form.name"
@@ -321,7 +358,7 @@ onMounted(loadSuppliers);
             </div>
             <div class="space-y-2">
               <label class="text-sm font-medium text-muted"
-                >Person In Charge</label
+                >{{ language === "id" ? "Penanggung Jawab" : "Person In Charge" }}</label
               >
               <input
                 v-model="form.contact_person"
@@ -330,7 +367,7 @@ onMounted(loadSuppliers);
               />
             </div>
             <div class="space-y-2">
-              <label class="text-sm font-medium text-muted">No. Telepon</label>
+              <label class="text-sm font-medium text-muted">{{ language === "id" ? "No. Telepon" : "Phone" }}</label>
               <input
                 v-model="form.phone"
                 type="text"
@@ -338,7 +375,7 @@ onMounted(loadSuppliers);
               />
             </div>
             <div class="space-y-2">
-              <label class="text-sm font-medium text-muted">Alamat</label>
+              <label class="text-sm font-medium text-muted">{{ language === "id" ? "Alamat" : "Address" }}</label>
               <textarea
                 v-model="form.address"
                 class="supplier-field w-full px-4 py-3 bg-surface/40 border border-border/70 rounded-2xl outline-none focus:ring-2 focus:ring-accent focus:ring-inset h-24 resize-none placeholder:text-muted/60"
@@ -350,25 +387,23 @@ onMounted(loadSuppliers);
                 @click="showForm = false"
                 class="flex-1 py-3 bg-muted/10 text-foreground rounded-2xl font-bold"
               >
-                Batal
+                {{ t("common_cancel") }}
               </button>
               <button
                 type="submit"
                 class="flex-1 py-3 bg-accent text-white rounded-2xl font-bold"
               >
-                Simpan
+                {{ t("common_save") }}
               </button>
             </div>
           </form>
-        </div>
-      </div>
-    </div>
+    </FormModalShell>
 
     <ConfirmModal
       :open="showDeleteConfirm"
-      title="Hapus Supplier"
-      :message="`Yakin ingin menghapus supplier '${supplierToDelete?.name}'?`"
-      confirm-text="Hapus"
+      :title="`${t('common_delete')} Supplier`"
+      :message="language === 'id' ? `Yakin ingin menghapus supplier '${supplierToDelete?.name}'?` : `Are you sure you want to delete supplier '${supplierToDelete?.name}'?`"
+      :confirm-text="t('common_delete')"
       @confirm="confirmDelete"
       @cancel="showDeleteConfirm = false"
       variant="danger"
